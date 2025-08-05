@@ -78,7 +78,9 @@ jobs:
           if [[ ${#projects[@]} -eq 0 ]]; then
             echo "projects=[]" >> $GITHUB_OUTPUT
           else
-            echo "projects=$(printf '%s\n' "${projects[@]}" | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
+            # Convert bash array to JSON array
+            printf -v joined '"%s",' "${projects[@]}"
+            echo "projects=[${joined%,}]" >> $GITHUB_OUTPUT
           fi
         fi
 
