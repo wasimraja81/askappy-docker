@@ -1,0 +1,85 @@
+version: '3.8'
+
+# Multi-Project Docker Compose Configuration
+# Supports multiple independent Docker projects
+
+services:
+  # askappy-base project
+  askappy-base:
+    build:
+      context: ./askappy-base
+      dockerfile: Dockerfile
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-latest}
+        CPU_CORE_COUNT: ${CPU_CORE_COUNT:-4}
+    image: wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1
+    container_name: askappy-base-dev
+    volumes:
+      - ./data:/data
+      - ./notebooks:/notebooks
+      - ./scripts:/scripts
+    environment:
+      - DISPLAY=${DISPLAY:-}
+    ports:
+      - "8888:8888"  # Jupyter notebook
+      - "8080:8080"  # Alternative web interface
+    networks:
+      - askappy-network
+    restart: unless-stopped
+
+  # tostool project (disabled until ready)
+  tostool:
+    build:
+      context: ./tostool
+      dockerfile: Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt
+      args:
+        BUILD_DATE: ${BUILD_DATE:-}
+        VCS_REF: ${VCS_REF:-}
+        VERSION: ${VERSION:-latest}
+        CPU_CORE_COUNT: ${CPU_CORE_COUNT:-4}
+    image: wasimraja81/tostool-ubuntu-22.04:mpich-casacore-3.6.1
+    container_name: tostool-dev
+    volumes:
+      - ./data:/data
+      - ./notebooks:/notebooks
+      - ./scripts:/scripts
+    environment:
+      - DISPLAY=${DISPLAY:-}
+    ports:
+      - "8889:8888"  # Jupyter notebook (different port)
+      - "8081:8080"  # Alternative web interface
+    networks:
+      - askappy-network
+    restart: unless-stopped
+    profiles:
+      - tostool  # Only starts when --profile tostool is used
+
+  # Development container with mounted source code
+  askappy-dev:
+    build:
+      context: ./askappy-base
+      dockerfile: Dockerfile
+      target: builder  # Use builder stage for development
+    image: askappy-dev:latest
+    container_name: askappy-dev-env
+    volumes:
+      - ./askappy-base:/workspace
+      - ./data:/data
+      - ./notebooks:/notebooks
+      - dev-cache:/home/askappy/.cache
+    working_dir: /workspace
+    command: tail -f /dev/null  # Keep container running
+    networks:
+      - askappy-network
+    profiles:
+      - dev
+
+networks:
+  askappy-network:
+    driver: bridge
+
+volumes:
+  dev-cache:
+    driver: local

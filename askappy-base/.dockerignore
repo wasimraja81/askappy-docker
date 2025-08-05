@@ -1,0 +1,70 @@
+# Build context optimization for askappy-docker
+
+# Version control
+.git
+.gitignore
+.github
+
+# Documentation
+README*.md
+docs/
+*.md
+
+# Development files
+.env
+.env.*
+docker-compose*.yml
+Makefile
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+
+# Build artifacts
+target/
+build/
+dist/
+*.log
+*.tmp
+
+# Node.js (if applicable)
+node_modules/
+npm-debug.log*
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+pip-log.txt
+pip-delete-this-directory.txt
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
+.tox/
+
+# Backup files
+*.bak
+*.backup
+*~
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+*.temp

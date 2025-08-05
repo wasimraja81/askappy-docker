@@ -1,0 +1,258 @@
+name: Build and Push Docker Images
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths:
+      - 'askappy-base/**'
+      - 'tostool/**'
+      - '.github/workflows/docker-build.yml'
+      - 'projects.yml'
+  pull_request:
+    branches: [ main ]
+    paths:
+      - 'askappy-base/**'
+      - 'tostool/**'
+  release:
+    types: [ published ]
+  workflow_dispatch:
+    inputs:
+      project:
+        description: 'Project to build (or "all" for all enabled projects)'
+        required: false
+        default: 'all'
+        type: choice
+        options:
+        - 'all'
+        - 'askappy-base'
+        - 'tostool'
+      platforms:
+        description: 'Target platforms'
+        required: false
+        default: 'linux/amd64,linux/arm64'
+        type: string
+
+env:
+  REGISTRY: docker.io
+
+jobs:
+  detect-changes:
+    runs-on: ubuntu-latest
+    outputs:
+      askappy-base: ${{ steps.changes.outputs.askappy-base }}
+      tostool: ${{ steps.changes.outputs.tostool }}
+      projects: ${{ steps.projects.outputs.projects }}
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Detect changes
+      uses: dorny/paths-filter@v3
+      id: changes
+      with:
+        filters: |
+          askappy-base:
+            - 'askappy-base/**'
+          tostool:
+            - 'tostool/**'
+            
+    - name: Determine projects to build
+      id: projects
+      run: |
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "${{ github.event.inputs.project }}" == "all" ]]; then
+            echo "projects=[\"askappy-base\"]" >> $GITHUB_OUTPUT
+          else
+            echo "projects=[\"${{ github.event.inputs.project }}\"]" >> $GITHUB_OUTPUT
+          fi
+        else
+          projects=()
+          if [[ "${{ steps.changes.outputs.askappy-base }}" == "true" ]]; then
+            projects+=("askappy-base")
+          fi
+          # Uncomment when tostool is ready
+          # if [[ "${{ steps.changes.outputs.tostool }}" == "true" ]]; then
+          #   projects+=("tostool")
+          # fi
+          
+          if [[ ${#projects[@]} -eq 0 ]]; then
+            echo "projects=[]" >> $GITHUB_OUTPUT
+          else
+            echo "projects=$(printf '%s\n' "${projects[@]}" | jq -R . | jq -s .)" >> $GITHUB_OUTPUT
+          fi
+        fi
+
+  build:
+    runs-on: ubuntu-latest
+    needs: detect-changes
+    if: ${{ needs.detect-changes.outputs.projects != '[]' }}
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.detect-changes.outputs.projects) }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+
+    - name: Set project variables
+      id: vars
+      run: |
+        case "${{ matrix.project }}" in
+          askappy-base)
+            echo "image_name=wasimraja81/askappy-ubuntu-24.04" >> $GITHUB_OUTPUT
+            echo "dockerfile=Dockerfile" >> $GITHUB_OUTPUT
+            echo "context=./askappy-base" >> $GITHUB_OUTPUT
+            echo "base_tag=base-mpich-casacore-3.6.1" >> $GITHUB_OUTPUT
+            ;;
+          tostool)
+            echo "image_name=wasimraja81/tostool-ubuntu-22.04" >> $GITHUB_OUTPUT
+            echo "dockerfile=Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt" >> $GITHUB_OUTPUT
+            echo "context=./tostool" >> $GITHUB_OUTPUT
+            echo "base_tag=mpich-casacore-3.6.1" >> $GITHUB_OUTPUT
+            ;;
+          *)
+            echo "Unknown project: ${{ matrix.project }}"
+            exit 1
+            ;;
+        esac
+
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+      with:
+        platforms: linux/amd64,linux/arm64
+
+    - name: Log in to Docker Hub
+      if: github.event_name != 'pull_request'
+      uses: docker/login-action@v3
+      with:
+        registry: ${{ env.REGISTRY }}
+        username: ${{ secrets.DOCKERHUB_USERNAME }}
+        password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+    - name: Extract metadata
+      id: meta
+      uses: docker/metadata-action@v5
+      with:
+        images: ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}
+        tags: |
+          type=ref,event=branch
+          type=ref,event=pr
+          type=semver,pattern={{version}}
+          type=raw,value=${{ steps.vars.outputs.base_tag }}
+          type=raw,value=latest,enable={{is_default_branch}}
+          type=raw,value={{date 'YYYYMMDD'}}-{{sha}}
+          type=raw,value={{date 'YYYYMMDD'}}
+        labels: |
+          org.opencontainers.image.title=${{ matrix.project }}
+          org.opencontainers.image.description=Docker image for ${{ matrix.project }}
+          org.opencontainers.image.vendor=CSIRO
+
+    - name: Build and push Docker image
+      uses: docker/build-push-action@v5
+      with:
+        context: ${{ steps.vars.outputs.context }}
+        file: ${{ steps.vars.outputs.context }}/${{ steps.vars.outputs.dockerfile }}
+        platforms: ${{ github.event.inputs.platforms || 'linux/amd64,linux/arm64' }}
+        push: ${{ github.event_name != 'pull_request' }}
+        tags: ${{ steps.meta.outputs.tags }}
+        labels: ${{ steps.meta.outputs.labels }}
+        build-args: |
+          BUILD_DATE=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.created'] }}
+          VCS_REF=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.revision'] }}
+          VERSION=${{ fromJSON(steps.meta.outputs.json).labels['org.opencontainers.image.version'] }}
+          CPU_CORE_COUNT=4
+        cache-from: type=gha,scope=${{ matrix.project }}
+        cache-to: type=gha,mode=max,scope=${{ matrix.project }}
+
+    - name: Test Docker image (AMD64 only)
+      if: matrix.project == 'askappy-base'
+      run: |
+        # Test the askappy-base image
+        docker run --rm --platform linux/amd64 ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.base_tag }} python3 -c "
+        import sys
+        print(f'Python version: {sys.version}')
+        
+        # Test casacore
+        try:
+            import casacore
+            print('✓ Casacore imported successfully')
+        except ImportError as e:
+            print(f'✗ Casacore import failed: {e}')
+            sys.exit(1)
+        
+        # Test scientific packages
+        packages = ['numpy', 'astropy', 'pandas', 'matplotlib', 'scipy']
+        for pkg in packages:
+            try:
+                __import__(pkg)
+                print(f'✓ {pkg} imported successfully')
+            except ImportError as e:
+                print(f'✗ {pkg} import failed: {e}')
+                sys.exit(1)
+        
+        print('✓ All tests passed!')
+        "
+
+    - name: Generate SBOM
+      if: github.event_name != 'pull_request'
+      uses: anchore/sbom-action@v0
+      with:
+        image: ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.base_tag }}
+        output-file: sbom-${{ matrix.project }}.spdx.json
+        upload-artifact: true
+
+  security-scan:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build]
+    if: ${{ needs.detect-changes.outputs.projects != '[]' && github.event_name != 'pull_request' }}
+    strategy:
+      matrix:
+        project: ${{ fromJSON(needs.detect-changes.outputs.projects) }}
+    
+    steps:
+    - name: Set project variables
+      id: vars
+      run: |
+        case "${{ matrix.project }}" in
+          askappy-base)
+            echo "image_name=wasimraja81/askappy-ubuntu-24.04" >> $GITHUB_OUTPUT
+            echo "base_tag=base-mpich-casacore-3.6.1" >> $GITHUB_OUTPUT
+            ;;
+          tostool)
+            echo "image_name=wasimraja81/tostool-ubuntu-22.04" >> $GITHUB_OUTPUT
+            echo "base_tag=mpich-casacore-3.6.1" >> $GITHUB_OUTPUT
+            ;;
+        esac
+
+    - name: Run Trivy vulnerability scanner
+      uses: aquasecurity/trivy-action@master
+      with:
+        image-ref: ${{ env.REGISTRY }}/${{ steps.vars.outputs.image_name }}:${{ steps.vars.outputs.base_tag }}
+        format: 'sarif'
+        output: 'trivy-results-${{ matrix.project }}.sarif'
+
+    - name: Upload Trivy scan results
+      uses: github/codeql-action/upload-sarif@v3
+      if: always()
+      with:
+        sarif_file: 'trivy-results-${{ matrix.project }}.sarif'
+
+  notify:
+    runs-on: ubuntu-latest
+    needs: [detect-changes, build, security-scan]
+    if: always() && github.event_name != 'pull_request' && needs.detect-changes.outputs.projects != '[]'
+    
+    steps:
+    - name: Notify on success
+      if: needs.build.result == 'success'
+      run: |
+        echo "✅ Docker images built and pushed successfully!"
+        echo "🚀 Projects built: ${{ needs.detect-changes.outputs.projects }}"
+    
+    - name: Notify on failure
+      if: needs.build.result == 'failure'
+      run: |
+        echo "❌ Docker build failed!"
+        exit 1

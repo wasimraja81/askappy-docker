@@ -1,0 +1,52 @@
+# Multi-Project Docker Configuration
+# This file defines all Docker projects in this repository
+
+projects:
+  askappy-base:
+    name: "askappy-base"
+    description: "Base image with casacore and python tools needed by ASKAPpipeline in ASKAP operations"
+    registry: "docker.io"
+    image_name: "wasimraja81/askappy-ubuntu-24.04"
+    base_tag: "base-mpich-casacore-3.6.1"
+    dockerfile: "Dockerfile"
+    context: "./askappy-base"
+    platforms: "linux/amd64,linux/arm64"
+    enabled: true
+    labels:
+      org.opencontainers.image.title: "askappy-base"
+      org.opencontainers.image.description: "Base image with casacore and python tools needed by ASKAPpipeline in ASKAP operations"
+      org.opencontainers.image.vendor: "CSIRO"
+      repo.name: "askappy"
+      repo.version: "base-casacore-3.6.1"
+      casacore.version: "v3.6.1"
+      mpich.version: "4.3.1"
+
+  tostool:
+    name: "tostool"
+    description: "Tools for ASKAP TOS (Telescope Operating System)"
+    registry: "docker.io"
+    image_name: "wasimraja81/tostool-ubuntu-22.04"
+    base_tag: "mpich-casacore-3.6.1"
+    dockerfile: "Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt"
+    context: "./tostool"
+    platforms: "linux/amd64,linux/arm64"
+    enabled: false  # Set to true when ready
+    labels:
+      org.opencontainers.image.title: "tostool"
+      org.opencontainers.image.description: "Telescope Operating System tools for ASKAP"
+      org.opencontainers.image.vendor: "CSIRO"
+      repo.name: "tostool"
+      casacore.version: "v3.6.1"
+      mpich.version: "4.3.1"
+
+  # Future projects can be added here
+  # example-project:
+  #   name: "example-project"
+  #   description: "Example project for future tools"
+  #   registry: "docker.io"
+  #   image_name: "wasimraja81/example-project"
+  #   base_tag: "latest"
+  #   dockerfile: "Dockerfile"
+  #   context: "./example-project"
+  #   platforms: "linux/amd64,linux/arm64"
+  #   enabled: false
