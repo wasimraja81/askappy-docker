@@ -46,7 +46,7 @@ RUN apt-get update -qq \
         libc6 \
         libssl-dev \
         libffi-dev \
-        libncurses5-dev \
+        libncurses-dev \
         libreadline-dev \
         # MPI and parallel computing
         libhwloc-dev \
@@ -57,7 +57,7 @@ RUN apt-get update -qq \
         python3-pip \
         python3-pyparsing \
         python3-numpy \
-        python-setuptools \
+        python3-setuptools \
         # Scientific computing libraries
         libblas-dev \
         liblapacke-dev \
@@ -94,8 +94,7 @@ RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
 # Set up Python environment
 RUN update-alternatives --remove python /usr/bin/python2 || true \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
-    && python3 -m pip install --upgrade pip setuptools wheel
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 #####################################################################
 # Build MPICH from source
@@ -171,8 +170,8 @@ RUN apt-get update -qq \
         libibverbs1 \
         libopenmpi3 \
         imagemagick \
-        libmagickcore-6.q16-6 \
-        libmagickwand-6.q16-6 \
+        libmagickcore-6.q16-7t64 \
+        libmagickwand-6.q16-7t64 \
         libmagic1 \
         fuse \
         libfuse2 \
@@ -184,7 +183,7 @@ RUN apt-get update -qq \
         liblapack3 \
         libcfitsio10 \
         libgsl27 \
-        libfftw3-3 \
+        libfftw3-double3 \
         libbz2-1.0 \
         libboost-python1.83.0 \
         # Python runtime
@@ -208,12 +207,12 @@ COPY --from=builder /_build/measures_data /_build/measures_data
 # Set up Python environment
 RUN update-alternatives --remove python /usr/bin/python2 || true \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
-    && python3 -m pip install --upgrade pip
+    && python3 -m pip install --break-system-packages --upgrade pip
 
 # Install Python packages
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
-    && pip3 install --default-timeout=120 --no-binary python-casacore python-casacore \
+RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt \
+    && pip3 install --break-system-packages --default-timeout=120 --no-binary python-casacore python-casacore \
     && rm /tmp/requirements.txt
 
 # Create non-root user for security
