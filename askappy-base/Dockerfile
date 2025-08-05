@@ -163,6 +163,9 @@ RUN apt-get update -qq \
         vim-gui-common \
         openssh-server \
         ca-certificates \
+        # Minimal development tools for Python packages that need compilation
+        build-essential \
+        python3-dev \
         # Runtime libraries for compiled dependencies
         libgfortran5 \
         libc6 \
@@ -206,8 +209,7 @@ COPY --from=builder /_build/measures_data /_build/measures_data
 
 # Set up Python environment
 RUN update-alternatives --remove python /usr/bin/python2 || true \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10 \
-    && python3 -m pip install --break-system-packages --upgrade pip
+    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 # Install Python packages
 COPY requirements.txt /tmp/requirements.txt
