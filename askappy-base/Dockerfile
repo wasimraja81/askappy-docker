@@ -167,6 +167,12 @@ RUN apt-get update -qq \
         build-essential \
         python3-dev \
         libssl-dev \
+        libbz2-dev \
+        zlib1g-dev \
+        libncurses-dev \
+        libreadline-dev \
+        libffi-dev \
+        libexpat1-dev \
         # Runtime libraries for compiled dependencies
         libgfortran5 \
         libc6 \
