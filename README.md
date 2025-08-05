@@ -1,6 +1,6 @@
 # Multi-Project Docker Repository
 
-This repository contains multiple independent Docker projects needed by ASKAPpipeline for processing ASKAP data in the operational environment.
+This repository contains multiple independent Docker projects needed by ASKAPpipeline for processing ASKAP data in the operational environment. The resulting containers provide python environments for several packages (internal and 3rd party) that various ASKAP science workflows require.
 
 ## 🏗️ **Repository Structure**
 
