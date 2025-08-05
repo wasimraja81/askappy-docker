@@ -151,7 +151,7 @@ FROM --platform=${TARGETPLATFORM} ubuntu:${UBUNTU_VERSION} as runtime
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-# Install only runtime dependencies including wcslib-dev and cfitsio-dev for python-casacore
+# Install only runtime dependencies with explicit BLAS library paths for CMake
 RUN apt-get update -qq \
     && apt-get install -yq tzdata \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
@@ -176,6 +176,16 @@ RUN apt-get update -qq \
         # Scientific computing development libraries needed for python-casacore
         wcslib-dev \
         libcfitsio-dev \
+        libblas-dev \
+        liblapack-dev \
+        libopenblas-dev \
+        libopenblas-base \
+        libatlas-base-dev \
+        libatlas3-base \
+        libblas3 \
+        liblapack3 \
+        gfortran \
+        pkg-config \
         # Runtime libraries for compiled dependencies
         libgfortran5 \
         libc6 \
@@ -222,6 +232,12 @@ RUN update-alternatives --remove python /usr/bin/python2 || true \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 # Install Python packages
+# Set environment variables to help CMake find BLAS libraries
+ENV BLA_VENDOR=OpenBLAS
+ENV CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu:/usr/local
+ENV PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+ENV BLAS_LIBRARIES=/usr/lib/x86_64-linux-gnu/libopenblas.so
+ENV LAPACK_LIBRARIES=/usr/lib/x86_64-linux-gnu/liblapack.so
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt \
     && pip3 install --break-system-packages --default-timeout=120 --no-binary python-casacore python-casacore \
