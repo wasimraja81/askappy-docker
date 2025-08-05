@@ -151,7 +151,7 @@ FROM --platform=${TARGETPLATFORM} ubuntu:${UBUNTU_VERSION} as runtime
 ARG DEBIAN_FRONTEND=noninteractive
 ENV TZ=Etc/UTC
 
-# Install only runtime dependencies
+# Install only runtime dependencies including wcslib-dev and cfitsio-dev for python-casacore
 RUN apt-get update -qq \
     && apt-get install -yq tzdata \
     && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
@@ -173,6 +173,9 @@ RUN apt-get update -qq \
         libreadline-dev \
         libffi-dev \
         libexpat1-dev \
+        # Scientific computing development libraries needed for python-casacore
+        wcslib-dev \
+        libcfitsio-dev \
         # Runtime libraries for compiled dependencies
         libgfortran5 \
         libc6 \
