@@ -97,8 +97,10 @@ RUN update-alternatives --remove python /usr/bin/python2 || true \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3 10
 
 #####################################################################
-# Build MPICH from source
+# Stage 2: Build MPICH (isolated layer)
 #####################################################################
+FROM builder as mpich-builder
+
 ARG MPICH_VERSION="4.3.1"
 ARG CPU_CORE_COUNT=4
 ARG MPICH_CONFIGURE_OPTIONS="--enable-fast=all,O3 --with-device=ch4:ofi --prefix=/usr/local FFLAGS=-fallow-argument-mismatch"
@@ -115,8 +117,10 @@ RUN cd ${BUILD_DIR} \
     && rm -rf ${BUILD_DIR}/mpich-${MPICH_VERSION}*
 
 #####################################################################
-# Build Casacore from source
+# Stage 3: Build Casacore (isolated layer)
 #####################################################################
+FROM mpich-builder as casacore-builder
+
 ARG CASACORE_VERSION=v3.6.1
 
 # Download measures data
@@ -143,105 +147,97 @@ RUN cd ${BUILD_DIR} \
     && cd / \
     && rm -rf ${BUILD_DIR}/casacore
 
-#####################################################################
-# Stage 2: Runtime image
-#####################################################################
-FROM --platform=${TARGETPLATFORM} ubuntu:${UBUNTU_VERSION} as runtime
+# Set environment variables for BLAS/LAPACK detection
+ENV BLA_VENDOR=OpenBLAS
+ENV CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu:/usr/local
+ENV PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
+ENV BLAS_LIBRARIES=/usr/lib/x86_64-linux-gnu/libopenblas.so
+ENV LAPACK_LIBRARIES=/usr/lib/x86_64-linux-gnu/liblapack.so
 
-ARG DEBIAN_FRONTEND=noninteractive
-ENV TZ=Etc/UTC
+# Install Python packages (including python-casacore) in the builder stage
+COPY requirements.txt /tmp/requirements.txt
+RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt \
+    && pip3 install --break-system-packages --default-timeout=120 --no-binary python-casacore python-casacore \
+    && rm /tmp/requirements.txt
 
-# Install only runtime dependencies with explicit BLAS library paths for CMake
-RUN apt-get update -qq \
-    && apt-get install -yq tzdata \
-    && ln -fs /usr/share/zoneinfo/${TZ} /etc/localtime \
-    && dpkg-reconfigure -f noninteractive tzdata \
-    && apt-get -y --no-install-recommends install \
-        # Essential tools
+#####################################################################
+# Stage 4: Runtime image (inherits complete build environment)
+#####################################################################
+FROM casacore-builder as runtime
+
+# Remove build-only packages to reduce image size while keeping runtime libraries
+RUN apt-get remove -y \
+        # Remove build tools not needed at runtime
+        git \
+        wget \
+        build-essential \
+        cmake \
+        gdb \
+        g++ \
+        gfortran \
+        flex \
+        bison \
+        # Remove development headers not needed at runtime
+        libssl-dev \
+        libffi-dev \
+        libncurses-dev \
+        libreadline-dev \
+        libhwloc-dev \
+        libibverbs-dev \
+        libopenmpi-dev \
+        python3-dev \
+        python3-setuptools \
+        libblas-dev \
+        liblapacke-dev \
+        libcfitsio-dev \
+        libpthread-stubs0-dev \
+        libgsl-dev \
+        wcslib-dev \
+        libfftw3-dev \
+        libmagickcore-dev \
+        libmagickwand-dev \
+        libbz2-dev \
+        libclang-dev \
+        libboost-python-dev \
+        libx11-dev \
+    && apt-get autoremove -y \
+    && apt-get install -y --no-install-recommends \
+        # Essential runtime tools
         vim \
         vim-gtk3 \
         vim-gui-common \
         openssh-server \
-        ca-certificates \
-        # Minimal development tools for Python packages that need compilation
-        build-essential \
-        python3-dev \
-        libssl-dev \
-        libbz2-dev \
-        zlib1g-dev \
-        libncurses-dev \
-        libreadline-dev \
-        libffi-dev \
-        libexpat1-dev \
-        # Scientific computing development libraries needed for python-casacore
-        wcslib-dev \
-        libcfitsio-dev \
-        libblas-dev \
-        liblapack-dev \
-        libopenblas-dev \
-        libopenblas-base \
-        libatlas-base-dev \
-        libatlas3-base \
-        libblas3 \
-        liblapack3 \
-        gfortran \
-        pkg-config \
-        # Runtime libraries for compiled dependencies
+        # Runtime libraries (automatically installed as dependencies)
         libgfortran5 \
         libc6 \
         libhwloc15 \
         libibverbs1 \
         libopenmpi3 \
+        libblas3 \
+        liblapack3 \
+        libcfitsio10 \
+        libgsl27 \
+        libfftw3-double3 \
+        libssl3 \
+        libffi8 \
+        libncurses6 \
+        libreadline8 \
+        libbz2-1.0 \
+        libboost-python1.83.0 \
         imagemagick \
         libmagickcore-6.q16-7t64 \
         libmagickwand-6.q16-7t64 \
         libmagic1 \
         fuse \
         libfuse2 \
-        libssl3 \
-        libffi8 \
-        libncurses6 \
-        libreadline8 \
-        libblas3 \
-        liblapack3 \
-        libcfitsio10 \
-        libgsl27 \
-        libfftw3-double3 \
-        libbz2-1.0 \
-        libboost-python1.83.0 \
-        # Python runtime
-        python3 \
-        python3-pip \
-        python3-pyparsing \
-        python3-numpy \
         python3-pyqt5 \
-        # X11 runtime (if needed)
         xauth \
         xorg \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
-
-# Copy built libraries and binaries from builder stage
-COPY --from=builder /usr/local/ /usr/local/
-COPY --from=builder /_build/measures_data /_build/measures_data
-
-# Set up Python environment
-RUN update-alternatives --remove python /usr/bin/python2 || true \
-    && update-alternatives --install /usr/bin/python python /usr/bin/python3 10
-
-# Install Python packages
-# Set environment variables to help CMake find BLAS libraries
-ENV BLA_VENDOR=OpenBLAS
-ENV CMAKE_PREFIX_PATH=/usr/lib/x86_64-linux-gnu:/usr/local
-ENV PKG_CONFIG_PATH=/usr/lib/x86_64-linux-gnu/pkgconfig:/usr/local/lib/pkgconfig
-ENV BLAS_LIBRARIES=/usr/lib/x86_64-linux-gnu/libopenblas.so
-ENV LAPACK_LIBRARIES=/usr/lib/x86_64-linux-gnu/liblapack.so
-COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --break-system-packages --no-cache-dir -r /tmp/requirements.txt \
-    && pip3 install --break-system-packages --default-timeout=120 --no-binary python-casacore python-casacore \
-    && rm /tmp/requirements.txt
+    && rm -rf /var/tmp/* \
+    && rm -rf ${BUILD_DIR}
 
 # Create non-root user for security
 ARG USERNAME=askappy
