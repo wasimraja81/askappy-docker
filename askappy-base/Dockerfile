@@ -166,6 +166,7 @@ RUN apt-get update -qq \
         # Minimal development tools for Python packages that need compilation
         build-essential \
         python3-dev \
+        libssl-dev \
         # Runtime libraries for compiled dependencies
         libgfortran5 \
         libc6 \
