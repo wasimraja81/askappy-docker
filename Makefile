@@ -6,8 +6,8 @@
 # Project configurations
 ASKAPPY_IMAGE := wasimraja81/askappy-ubuntu-24.04
 ASKAPPY_TAG := base-mpich-casacore-3.6.1
-TOSTOOL_IMAGE := wasimraja81/tostool-ubuntu-22.04
-TOSTOOL_TAG := mpich-casacore-3.6.1
+TOSTOOL_IMAGE := wasimraja81/tostool-ubuntu-24.04
+TOSTOOL_TAG := 2.28.0
 
 PLATFORMS := linux/amd64,linux/arm64
 
@@ -42,7 +42,7 @@ help: ## Show this help message
 list-projects: ## List all available projects
 	@echo "$(BLUE)Available Projects:$(NC)"
 	@echo "  $(GREEN)askappy-base$(NC) - Base image with casacore ($(ASKAPPY_IMAGE):$(ASKAPPY_TAG))"
-	@echo "  $(YELLOW)tostool$(NC)      - TOSTOOL processing tools ($(TOSTOOL_IMAGE):$(TOSTOOL_TAG)) [disabled]"
+	@echo "  $(YELLOW)tostool$(NC)      - TOSTOOL processing tools ($(TOSTOOL_IMAGE):$(TOSTOOL_TAG)) [disabled - Ubuntu 24.04 ready]"
 
 # Generic build targets
 build-all: build-askappy ## Build all enabled projects
@@ -77,16 +77,41 @@ push-askappy: ## Push askappy-base to Docker Hub
 	docker push $(ASKAPPY_IMAGE):$(ASKAPPY_TAG)
 	docker push $(ASKAPPY_IMAGE):latest
 
-# Tostool specific targets (disabled for now)
-build-tostool: ## Build tostool Docker image [DISABLED]
-	@echo "$(YELLOW)tostool build is currently disabled$(NC)"
-	@echo "Enable by removing .gitignore entry for tostool/"
+# Tostool specific targets (ready for Ubuntu 24.04)
+build-tostool: ## Build tostool Docker image [READY - Ubuntu 24.04]
+	@echo "$(BLUE)Building tostool Ubuntu 24.04...$(NC)"
+	cd tostool && ./build.sh
 
-test-tostool: ## Test tostool Docker image [DISABLED]
-	@echo "$(YELLOW)tostool test is currently disabled$(NC)"
+build-tostool-local: ## Build tostool locally without pushing
+	@echo "$(BLUE)Building tostool locally...$(NC)"
+	@echo "$(YELLOW)Note: Requires Git credentials for CSIRO Bitbucket access$(NC)"
+	cd tostool && \
+	mkdir -p askap-repos && \
+	cd askap-repos && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/askapsdp/askap-dev.git askap-dev && \
+	cd askap-dev && git checkout 2.28.0 && cd .. && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos/python-askap.git python-askap && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos/python-parset python-parset && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos/python-askap-interfaces python-askap-interfaces && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos/python-iceutils python-iceutils && \
+	git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos/python-askap-cli.git python-askap-cli && \
+	cd .. && \
+	docker buildx build --platform linux/amd64 \
+		--tag $(TOSTOOL_IMAGE):$(TOSTOOL_TAG)-local \
+		--file Dockerfile \
+		. && \
+	rm -rf askap-repos
 
-push-tostool: ## Push tostool to Docker Hub [DISABLED]
-	@echo "$(YELLOW)tostool push is currently disabled$(NC)"
+test-tostool: ## Test tostool Docker image
+	@echo "$(BLUE)Testing tostool...$(NC)"
+	docker run --rm --platform linux/amd64 $(TOSTOOL_IMAGE):$(TOSTOOL_TAG) python3 -c "\
+		import askap, casacore, numpy; \
+		print('✅ tostool test passed')"
+
+push-tostool: ## Push tostool to Docker Hub
+	@echo "$(BLUE)Pushing tostool...$(NC)"
+	docker push $(TOSTOOL_IMAGE):$(TOSTOOL_TAG)
+	docker push $(TOSTOOL_IMAGE):latest
 
 # Development targets
 dev-up: ## Start development environment

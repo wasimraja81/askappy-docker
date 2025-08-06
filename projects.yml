@@ -23,21 +23,23 @@ projects:
 
   tostool:
     name: "tostool"
-    description: "Tools for ASKAP TOS (Telescope Operating System)"
+    description: "Tools for ASKAP TOS (Telescope Operating System) - Ubuntu 24.04"
     registry: "docker.io"
-    image_name: "wasimraja81/tostool-ubuntu-22.04"
-    base_tag: "mpich-casacore-3.6.1"
-    dockerfile: "Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt"
+    image_name: "wasimraja81/tostool-ubuntu-24.04"
+    base_tag: "2.28.0"
+    dockerfile: "Dockerfile"
     context: "./tostool"
     platforms: "linux/amd64,linux/arm64"
-    enabled: false  # Set to true when ready
+    enabled: false  # Set to true when ready to build
     labels:
       org.opencontainers.image.title: "tostool"
-      org.opencontainers.image.description: "Telescope Operating System tools for ASKAP"
+      org.opencontainers.image.description: "ASKAP TOS tools built on Ubuntu 24.04 with casacore"
       org.opencontainers.image.vendor: "CSIRO"
       repo.name: "tostool"
+      repo.version: "2.28.0"
       casacore.version: "v3.6.1"
       mpich.version: "4.3.1"
+      base.image: "wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1"
 
   # Future projects can be added here
   # example-project:
