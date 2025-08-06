@@ -334,7 +334,7 @@ jobs:
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: trivy-results-${{ matrix.project }}.sarif
-        category: ${{ matrix.project }}-security-scan  notify:
+        category: ${{ matrix.project }}-security-scan
     runs-on: ubuntu-latest
     needs: [detect-changes, build, security-scan]
     if: always() && github.event_name != 'pull_request' && needs.detect-changes.outputs.projects != '[]'
