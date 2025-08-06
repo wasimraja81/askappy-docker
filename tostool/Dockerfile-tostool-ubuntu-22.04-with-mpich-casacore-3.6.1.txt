@@ -1,0 +1,111 @@
+# syntax=docker/dockerfile:1
+ARG TARGETPLATFORM=linux/amd64
+FROM --platform=${TARGETPLATFORM} wasimraja81/askappy-ubuntu-22.04:base-mpich-casacore-3.6.1
+
+ARG TARGETPLATFORM
+
+
+# Record useful metadata: See https://docs.docker.com/config/labels-custom-metadata/
+LABEL repo.name="${REPO_NAME}" \
+      repo.version="${REPO_VERSION}" \
+      repo.maintainer.name="Wasim Raja" \
+      repo.maintainer.email="Wasim.Raja@csiro.au" \
+      repo.description="The image provides ASKAP TOS tools \
+needed by ASKAPpipeline to run various services and \
+askap-python tools." 
+
+# ssh information passed as build arguments 
+# example: here directory where key ssh information stored is in $HOME/.ssh
+# --build-arg SSH_KEY_PRI="$(more ~/.ssh/id_rsa)" --build-arg SSH_KEY_PUB="$(more ~/.ssh/id_rsa.pub)" --build-arg SSH_KNOWNHOSTS="$(more ~/.ssh/known_hosts)"
+ARG SSH_KEY_PRI
+ARG SSH_KEY_PUB
+ARG SSH_KNOWNHOSTS 
+
+# What version/branch of your repo do you want to build this container from?
+# The REPO_VERSION for REPO_NAME=tostool is in fact the tag for the repository "askap-dev"
+# It is a bit of a convoluted naming style - but given that most of the tostool building 
+# is ensured by tos-ice-config in askap-dev, I am using the version number for askap-dev 
+# as the version number for this container too. BUT I REPEAT - this is a rather convoluted 
+# way of maintaining dependencies. 
+# For the rest of the repos (example, askap-interfaces, python-askap-interfaces, 
+# python-askap, python-parset, python-iceutils, python-askap-cli etc., we build the 
+# latest HEAD (master).
+# 
+ARG REPO_NAME=tostool
+ARG REPO_VERSION=2.28.0
+ARG PY3VERSION=10
+
+ARG BUILD_DIR=/tmp/
+ARG INSTALL_DIR=/usr/local/askappy/
+WORKDIR /
+
+# Set default python to python3:
+RUN update-alternatives --remove python /usr/bin/python2 \
+      && update-alternatives --install /usr/bin/python python /usr/bin/python3 ${PY3VERSION} \
+      && python3 -m pip install -U --force-reinstall pip \
+      && pip3 install setuptools
+
+# You may want to define the repo Ver as an environment variable:
+ENV TOSTOOL_VERSION="${REPO_NAME}/${REPO_VERSION}"
+
+# Fetch the requirement file from the repo and install requirements:
+## Fetch the additional requirement file from the repo and install requirements:
+ARG REQFILE=requirements.txt
+COPY ${REQFILE} /requirements.txt
+#
+RUN pip3 install --no-cache-dir -r requirements.txt
+# configure ssh ensuring Security: 
+RUN echo "Setting up ssh " \ 
+    # setup ssh \ 
+    && mkdir -p /root/.ssh && chmod 0700 /root/.ssh \
+    && echo ${SSH_KEY_PRI} > /root/.ssh/id_rsa \
+    # because using cat to pass the private key, need to reformat it \
+    && sed -i 's| |\n|g' /root/.ssh/id_rsa \ 
+    && numlines=$(wc -l /root/.ssh/id_rsa | awk '{print $1}') \
+    && istart=$(($numlines - 4)) && iend=$(($istart - 4)) \ 
+    && head -n ${istart} /root/.ssh/id_rsa | tail -n ${iend} > /root/.ssh/id_rsa.keyonly \
+    && echo "-----BEGIN OPENSSH PRIVATE KEY-----" >> /root/.ssh/id_rsa.head \ 
+    && echo "-----END OPENSSH PRIVATE KEY-----" >> /root/.ssh/id_rsa.tail \
+    && cat /root/.ssh/id_rsa.head /root/.ssh/id_rsa.keyonly /root/.ssh/id_rsa.tail > /root/.ssh/id_rsa \
+    && echo ${SSH_KEY_PUB} > /root/.ssh/id_rsa.pub \
+    && echo ${SSH_KNOWNHOSTS} > /root/.ssh/known_hosts \
+    # && ssh-keyscan bitbucket.csiro.au >> /root/.ssh/known_hostd \
+    && chmod 700 /root/.ssh/id_rsa \ 
+    && chown -R root:root /root/.ssh \ 
+    && printf "IdentityFile /root/.ssh/id_rsa\n" >> ~/.ssh/config \
+    && printf "Host bitbucket.csiro.au\n\tStrictHostKeyChecking no\n" >> ~/.ssh/config \
+    && cat ~/.ssh/config \
+    && echo "Finished setting up SSH" \
+    && echo "Now building askappy stuff " \
+    #&& . /usr/bin/setup-env.sh \
+    && mkdir -p ${INSTALL_DIR} ${BUILD_DIR} \
+    && git clone ssh://git@bitbucket.csiro.au:7999/askapsdp/askap-dev.git ${BUILD_DIR}/askap-dev \
+    && cd ${BUILD_DIR}/askap-dev/deploy \
+    && git checkout ${REPO_VERSION} \
+    # build the repositories 
+    && gitclonetos="git clone --recurse-submodules ssh://git@bitbucket.csiro.au:7999/tos" \
+    && ${gitclonetos}/python-askap.git ${BUILD_DIR}/python-askap \
+    && pip3 install ${BUILD_DIR}/python-askap \
+    && ${gitclonetos}/python-parset ${BUILD_DIR}/python-parset \
+    && pip3 install ${BUILD_DIR}/python-parset \
+    #&& ${gitclonetos}/askap-interfaces ${INSTALL_DIR}/askap-interfaces \
+    && ${gitclonetos}/python-askap-interfaces ${BUILD_DIR}/python-askap-interfaces \ 
+    #&& export SLICE_DIR="${INSTALL_DIR}/askap-interfaces" \
+    #&& echo "SLICE_DIR=${SLICE_DIR}" \
+    && pip3 install ${BUILD_DIR}/python-askap-interfaces \
+    && ${gitclonetos}/python-iceutils ${BUILD_DIR}/python-iceutils \
+    && pip3 install ${BUILD_DIR}/python-iceutils \
+    && ${gitclonetos}/python-askap-cli.git ${BUILD_DIR}/python-askap-cli \
+    && pip3 install ${BUILD_DIR}/python-askap-cli \
+    # We'll need the ICE connection config 
+    && cp ${BUILD_DIR}/askap-dev/config/tos-ice.cfg ${INSTALL_DIR} \
+    && echo "Finished askappy"
+
+ENV ICE_CONFIG=${INSTALL_DIR}/tos-ice.cfg
+#
+# Copy the build files for record
+RUN mkdir -p ${BUILD_DIR}/${REPO_NAME}
+COPY Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt /Dockerfile-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.txt
+COPY build-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.sh /build-tostool-ubuntu-22.04-with-mpich-casacore-3.6.1.sh
+CMD ["/bin/bash"]
+

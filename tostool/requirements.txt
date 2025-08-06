@@ -1,0 +1,7 @@
+#reproject
+#aplpy
+python-dateutil>=2.8.2
+tzdata>=2022.7
+dask
+casa-formats-io
+patsy

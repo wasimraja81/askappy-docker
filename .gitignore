@@ -34,4 +34,4 @@ Thumbs.db
 tostool/tmp/python-askap-interfaces/
 
 # Temporarily exclude tostool until ready
-tostool/
+#tostool/
