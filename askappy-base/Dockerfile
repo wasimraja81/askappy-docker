@@ -93,9 +93,9 @@ ARG INSTALL_DIR=/_install
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
 # Install basic Python packages
-RUN python3 -m pip install -U pip \
-    && pip3 install setuptools \
-    && pip3 install wheel 
+RUN python3 -m pip install -U pip --break-system-packages \
+    && pip3 install setuptools --break-system-packages \
+    && pip3 install wheel --break-system-packages 
 
 #####################################################################
 # Stage 2: Build MPICH (isolated layer)
@@ -158,8 +158,8 @@ ENV CMAKE_PREFIX_PATH=/usr/local:/usr/lib/x86_64-linux-gnu
 
 # Install Python packages (including python-casacore) 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir -r /tmp/requirements.txt \
-    && pip3 install --default-timeout=120 --no-binary python-casacore python-casacore \
+RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt \
+    && pip3 install --default-timeout=120 --no-binary python-casacore --break-system-packages python-casacore \
     && rm /tmp/requirements.txt
 
 # Clean up build artifacts to reduce image size
