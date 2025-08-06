@@ -60,11 +60,11 @@ jobs:
     - name: Determine projects to build
       id: projects
       run: |
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          if [[ "${{ github.event.inputs.project }}" == "all" ]]; then
-            echo "projects=[\"askappy-base\",\"tostool\"]" >> $GITHUB_OUTPUT
+        if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
+          if [[ "$INPUT_PROJECT" == "all" || -z "$INPUT_PROJECT" ]]; then
+            echo 'projects=["askappy-base","tostool"]' >> $GITHUB_OUTPUT
           else
-            echo "projects=[\"${{ github.event.inputs.project }}\"]" >> $GITHUB_OUTPUT
+            echo "projects=[\"$INPUT_PROJECT\"]" >> $GITHUB_OUTPUT
           fi
         else
           projects=()
@@ -75,7 +75,6 @@ jobs:
           if [[ "${{ steps.changes.outputs.tostool }}" == "true" ]]; then
             projects+=("tostool")
           fi
-          
           if [[ ${#projects[@]} -eq 0 ]]; then
             echo "projects=[]" >> $GITHUB_OUTPUT
           else
@@ -177,7 +176,7 @@ jobs:
         "
 
     - name: Generate SBOM
-      if: github.event_name != 'pull_request'
+      if: "github.event_name != 'pull_request'
       uses: anchore/sbom-action@v0
       with:
         image: ${{ env.REGISTRY }}/wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1
