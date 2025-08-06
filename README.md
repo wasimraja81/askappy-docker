@@ -27,8 +27,8 @@ askappy-docker/
 
 | Project | Status | Registry | Description |
 |---------|---------|----------|-------------|
-| **askappy-base** | ✅ **Active** | `wasimraja81/askappy-ubuntu-24.04` | Base image with casacore and scientific computing tools |
-| **tostool** | 🚧 **Disabled** | `wasimraja81/tostool-ubuntu-22.04` | TOSTOOL astronomical data processing tools |
+| **askappy-base** | ✅ **Active** | `wasimraja81/askappy-ubuntu-24.04` | Base image with casacore and and other scientific computing tools |
+| **tostool** | 🚧 **Disabled** | `wasimraja81/tostool-ubuntu-22.04` | Telescope Operating System tools for ASKAP|
 
 ## 🚀 **Quick Start**
 

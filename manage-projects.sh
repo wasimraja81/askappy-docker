@@ -219,7 +219,7 @@ matplotlib
 EOF
     
     # Create build script
-    cat > "$project/build.sh" <<'EOF'
+    cat > "$project/build.sh" <<EOF
 #!/bin/bash
 set -euo pipefail
 
