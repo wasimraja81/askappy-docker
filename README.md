@@ -1,204 +1,283 @@
-# Multi-Project Docker Repository
+# askappy-docker: Multi-Project Build System
 
-This repository contains multiple independent Docker projects needed by ASKAPpipeline for processing ASKAP data in the operational environment. The resulting containers provide python environments for several packages (internal and 3rd party) that various ASKAP science workflows require.
+This repository contains multiple independent Docker projects for ASKAP astronomical data processing. The build system provides a complete scientific computing environment with flexible deployment options.
 
-## 🏗️ **Repository Structure**
+## 🏗️ **Architecture Overview**
 
 ```
 askappy-docker/
-├── askappy-base/          # Base image with casacore & scientific tools
-│   ├── Dockerfile         # Optimized multi-stage build
-│   ├── build.sh          # Build script
-│   ├── requirements.txt   # Python dependencies
+├── askappy-base/          # 🧱 Base image (Ubuntu 24.04 + casacore + scientific tools)
+│   ├── Dockerfile         # Multi-stage build optimized for size and security
+│   ├── build.sh          # Registry build script
+│   ├── requirements.txt   # Python scientific dependencies
 │   └── config.py         # Casacore configuration
-├── tostool/              # TOSTOOL astronomical processing tools [DISABLED]
-│   ├── Dockerfile-*      # TOSTOOL Dockerfile
-│   ├── build-*.sh        # TOSTOOL build script
-│   └── requirements.txt  # TOSTOOL dependencies
-├── .github/workflows/    # CI/CD automation
-│   └── docker-build.yml  # Multi-project workflow
-├── projects.yml          # Project configuration
-├── Makefile             # Multi-project commands
-├── manage-projects.sh    # Project management utilities
-└── docker-compose.yml   # Development environment
+├── tostool/              # 🔭 ASKAP TOS tools (builds on askappy-base)
+│   ├── Dockerfile        # ASKAP tools installation
+│   ├── build.sh          # Production build with registry push
+│   └── requirements.txt  # ASKAP-specific dependencies
+├── Makefile              # 🚀 Complete build automation
+└── README.md            # This file
+```
+
+### **🔗 Dependency Chain**
+```
+Ubuntu 24.04 → askappy-base (881MB) → tostool (914MB)
+     ↑              ↑                    ↑
+ Base OS    Scientific Stack      ASKAP Tools
 ```
 
 ## 🎯 **Available Projects**
 
-| Project | Status | Registry | Description |
-|---------|---------|----------|-------------|
-| **askappy-base** | ✅ **Active** | `wasimraja81/askappy-ubuntu-24.04` | Base image with casacore and and other scientific computing tools |
-| **tostool** | 🚧 **Disabled** | `wasimraja81/tostool-ubuntu-22.04` | Telescope Operating System tools for ASKAP|
+| Project | Status | Size | Registry | Description |
+|---------|---------|------|----------|-------------|
+| **askappy-base** | ✅ **Ready** | 881MB | `wasimraja81/askappy-ubuntu-24.04` | Ubuntu 24.04 + MPICH 4.3.1 + Casacore 3.6.1 + Scientific Python |
+| **tostool** | ✅ **Ready** | 914MB | `wasimraja81/tostool-ubuntu-24.04` | ASKAP TOS tools v2.28.0 + schedblock + parset utilities |
 
 ## 🚀 **Quick Start**
 
-### **Build and Run Projects**
+### **Basic Usage**
 ```bash
-# Build askappy-base
-make build-askappy
-# or
-cd askappy-base && ./build.sh
+# Show all available commands
+make help
 
-# Test the image
-make test-askappy
+# Build askappy-base (independent - builds from scratch)
+make build-askappy-local    # Local development build
+make build-askappy          # Registry build + push
 
-# Push to registry
-make push-askappy
+# Build tostool (depends on askappy-base)
+make build-tostool-local-base     # Uses local askappy-base (fastest)
+make build-tostool-registry-base  # Uses registry askappy-base (testing)
+make build-tostool                # Production build + push
 
-# Build all enabled projects
-make build-all
+# Test images
+make test-askappy-local
+make test-tostool-local-base
 
-# List available projects
-./manage-projects.sh list
-
-# Check project status
-./manage-projects.sh status
+# Clean up
+make clean-temp    # Remove temporary files
+make clean         # Docker cleanup
 ```
 
-## 🔧 **Project Management**
-
-### **Using the Management Script**
-
+### **Release Management**
 ```bash
-# List all projects
-./manage-projects.sh list
+# Create and build a release
+git tag v2.28.1
+git push origin v2.28.1
+make tag-release   # Auto-builds and pushes with tag + SHA
 
-# Enable a project (removes from .gitignore)
-./manage-projects.sh enable tostool
-
-# Disable a project (adds to .gitignore)
-./manage-projects.sh disable tostool
-
-# Check project status
-./manage-projects.sh status
-
-# Validate project configurations
-./manage-projects.sh validate
-
-# Create a new project template
-./manage-projects.sh create-project my-tool wasimraja81/my-tool
+# Check build information
+make info
+make status
 ```
 
-### **Adding a New Project**
+## 📋 **Complete Command Reference**
 
-1. **Create project using the template:**
-   ```bash
-   ./manage-projects.sh create-project new-project wasimraja81/new-project
-   ```
+```
+askappy-docker Multi-Project Build System
+=============================================
 
-2. **Update `projects.yml`:**
-   ```yaml
-   new-project:
-     name: "new-project"
-     registry: "docker.io"
-     image_name: "wasimraja81/new-project"
-     base_tag: "latest"
-     enabled: true
-   ```
+Available commands:
 
-3. **Enable the project:**
-   ```bash
-   ./manage-projects.sh enable new-project
-   ```
+  help                      Show this help message
+  list-projects             List all available projects
+  build-all                 Build all enabled projects
+  test-all                  Test all enabled projects
+  push-all                  Push all enabled projects
+  build-askappy             Build askappy-base Docker image
+  build-askappy-local       Build askappy-base locally without pushing
+  test-askappy-local        Test askappy-base local image
+  test-askappy              Test askappy-base Docker image
+  push-askappy              Push askappy-base to Docker Hub
+  build-tostool             Build and PUSH tostool to Docker Hub [PRODUCTION]
+  build-tostool-local-base  Build tostool locally (uses LOCAL base image, no push)
+  build-tostool-registry-base Build tostool locally (uses REGISTRY base image, no push)
+  test-tostool              Test tostool Docker image (production registry version)
+  test-tostool-local-base   Test tostool built with local base image
+  test-tostool-registry-base Test tostool built with registry base image
+  push-tostool              Push tostool to Docker Hub
+  dev-up                    Start development environment
+  dev-down                  Stop development environment
+  dev-logs                  Show development environment logs
+  clean                     Clean up Docker resources
+  clean-temp                Clean up temporary build files
+  clean-project             Clean images for specific project
+  lint                      Lint all Dockerfiles
+  security-scan-askappy     Run security scan on askappy-base
+  info                      Show build information
+  status                    Show current Docker status
+  setup                     Initial setup for development
+  tag-release               Tag and build release version (auto-detects git tag)
+  ci-build-askappy          Build askappy-base for CI/CD
+  ci-test-askappy           Test askappy-base CI build
+  enable-tostool            Enable tostool project (remove from gitignore)
 
-### **Enabling tostool**
+Project-specific commands:
+  build-askappy                Build askappy-base image
+  build-askappy-local          Build askappy-base locally (no push)
+  build-tostool                Build + PUSH tostool (production)
+  build-tostool-local-base     Build tostool using LOCAL base (dev)
+  build-tostool-registry-base  Build tostool using REGISTRY base (test)
+  test-askappy                 Test askappy-base image
+  test-askappy-local           Test askappy-base local image
+  test-tostool-local-base      Test local-base build
+  push-askappy                 Push askappy-base image
+  clean-temp                   Clean temporary files
+  tag-release                  Tag and build release version
 
-When ready to enable tostool:
-```bash
-# Enable the project
-./manage-projects.sh enable tostool
-
-# Commit changes
-git add .gitignore projects.yml
-git commit -m "Enable tostool project"
+Examples:
+  make build-askappy      # Build askappy-base project
+  make test-askappy       # Test askappy-base project
+  make build-all          # Build all enabled projects
 ```
 
-## 🏷️ **Image Tagging Strategy**
+## 🏗️ **Build Strategy & Dependencies**
 
-Each project uses independent tagging:
+### **askappy-base (Independent)**
+- **Can build from scratch** - No dependencies on other containers
+- **Build options:**
+  - `make build-askappy` - Registry build + push to Docker Hub
+  - `make build-askappy-local` - Local development build (fastest)
+- **Base:** Ubuntu 24.04 with PEP 668 compliance
+- **Includes:** MPICH 4.3.1, Casacore 3.6.1, Scientific Python stack
 
-### **askappy-base**
-- `wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1`
-- `wasimraja81/askappy-ubuntu-24.04:latest`
-- `wasimraja81/askappy-ubuntu-24.04:develop`
-- `wasimraja81/askappy-ubuntu-24.04:20250805-abc123`
+### **tostool (Dependent)**
+- **Requires askappy-base** - Builds on top of askappy-base image
+- **Build options:**
+  - `make build-tostool` - Production: Uses registry base + pushes to Docker Hub
+  - `make build-tostool-local-base` - Development: Uses local askappy-base (fastest iteration)
+  - `make build-tostool-registry-base` - Testing: Uses registry askappy-base (integration testing)
+- **Includes:** ASKAP TOS tools v2.28.0, schedblock, parset utilities
+- **Security:** Uses local Git credentials, no SSH keys in containers
 
-### **tostool** (when enabled)
-- `wasimraja81/tostool-ubuntu-22.04:mpich-casacore-3.6.1`
-- `wasimraja81/tostool-ubuntu-22.04:latest`
-- `wasimraja81/tostool-ubuntu-22.04:develop`
-
-## 🔄 **CI/CD Workflow**
-
-### **Automated Triggers**
-- **Push to main/develop**: Builds affected projects
-- **Pull Request**: Build-only (no push)
-- **Release**: Builds all projects with version tags
-- **Manual**: Choose specific project or "all"
-
-### **Smart Change Detection**
-The workflow automatically detects which projects need rebuilding:
-- Changes in `askappy-base/` → builds askappy-base
-- Changes in `tostool/` → builds tostool (when enabled)
-- No unnecessary builds!
-
-### **GitHub Secrets Required**
+### **Validation Testing**
 ```bash
-DOCKERHUB_USERNAME=wasimraja81
-DOCKERHUB_TOKEN=your-docker-hub-token
+# Test ASKAP command-line tools
+docker run --rm wasimraja81/tostool-ubuntu-24.04:2.28.0-local schedblock info -h
+
+# Test Python environment
+docker run --rm wasimraja81/tostool-ubuntu-24.04:2.28.0-local \
+  python3 -c "import casacore, numpy; print('✅ Working')"
 ```
 
-## 📋 **Development Workflow**
+## 🎯 **Development Workflows**
 
-### **Working on askappy-base**
+### **Working on askappy-base Only**
 ```bash
-# Make changes to askappy-base/
+# Edit askappy-base files
 vim askappy-base/Dockerfile
 
-# Test locally
+# Quick local test
 make build-askappy-local
-make test-askappy
+make test-askappy-local
 
-# Commit and push (triggers CI)
-git add askappy-base/
-git commit -m "Update askappy-base"
-git push origin develop
+# Clean iteration (no external dependencies)
+make clean-temp
 ```
 
-### **Working on multiple projects**
+### **Working on tostool**
 ```bash
-# Build all enabled projects
-make build-all
-make test-all
+# First ensure you have a working askappy-base
+make build-askappy-local    # Build base dependency
 
-# Check status
-./manage-projects.sh status
-make info
+# Fast iteration using local base
+make build-tostool-local-base
+make test-tostool-local-base
+
+# Integration test with registry base
+make build-tostool-registry-base
+make test-tostool-registry-base
 ```
 
-## 🔍 **Project Isolation Benefits**
+### **Release Process**
+```bash
+# Create release tag
+git tag v2.28.1
+git push origin v2.28.1
 
-✅ **Independent registries** - Each project has its own Docker Hub repository  
-✅ **Isolated builds** - Changes only affect relevant projects  
-✅ **Separate versioning** - Each project can evolve independently  
-✅ **Efficient CI/CD** - Only builds what changed  
-✅ **Scalable** - Easy to add new projects  
-✅ **Maintainable** - Clear separation of concerns  
+# Automated release build (builds both projects with version tags)
+make tag-release
 
-## 🎯 **Current Status**
+# Resulting images:
+# - wasimraja81/askappy-ubuntu-24.04:v2.28.1
+# - wasimraja81/askappy-ubuntu-24.04:v2.28.1-abc123 (with SHA)
+# - wasimraja81/tostool-ubuntu-24.04:v2.28.1
+# - wasimraja81/tostool-ubuntu-24.04:v2.28.1-abc123 (with SHA)
+```
 
-- ✅ **askappy-base**: Fully operational with optimized multi-stage build
-- 🚧 **tostool**: Prepared but disabled (excluded from git until ready)
-- ✅ **CI/CD**: Multi-project workflow active and ready
-- ✅ **Project Management**: Complete utilities for managing multiple projects
-- ✅ **Documentation**: Updated for current multi-project architecture
+## � **Security & Best Practices**
 
-## 🔜 **Next Steps**
+### **No SSH Keys in Containers**
+- ✅ Uses local Git credential cloning
+- ✅ COPY strategy instead of git clone inside containers
+- ✅ Minimal attack surface
 
-1. **Set up Docker Hub credentials** in GitHub secrets
-2. **Commit and test askappy-base** build
-3. **Enable tostool** when ready using `./manage-projects.sh enable tostool`
-4. **Add new projects** using the management utilities
-5. **Scale the workflow** as needed for additional projects
+### **Multi-Architecture Support**
+- ✅ linux/amd64 (Intel/AMD)
+- ✅ linux/arm64 (Apple Silicon, ARM servers)
+- ✅ Buildx with automatic platform detection
 
-This setup gives you maximum flexibility while maintaining clean separation between projects! 🚀
+### **Ubuntu 24.04 Compliance**
+- ✅ PEP 668 externally-managed environment
+- ✅ `--break-system-packages` for pip installations
+- ✅ Clean multi-stage builds for optimal size
+
+## 🔍 **Troubleshooting**
+
+### **Common Issues**
+
+**"No space left on device"**
+```bash
+make clean        # Clean Docker cache
+make clean-temp   # Remove temporary files
+docker system df  # Check space usage
+```
+
+**"Image not found locally"**
+```bash
+# Ensure local images are built with --load flag
+make build-askappy-local
+
+# Check available images
+make status
+```
+
+**"Git credentials required"**
+```bash
+# Ensure SSH key is configured for CSIRO Bitbucket
+ssh -T git@bitbucket.csiro.au
+
+# Or check Git credential helper
+git config --get credential.helper
+```
+
+### **Build Information**
+```bash
+make info     # Shows dependency chain, tags, git status
+make status   # Shows Docker builder status and available images
+```
+
+## 🎯 **Current Status & Next Steps**
+
+### **✅ Completed**
+- ✅ Ubuntu 24.04 migration complete
+- ✅ Flexible build system with local/registry options  
+- ✅ Security improvements (no SSH keys in containers)
+- ✅ Automated testing and validation
+- ✅ Release management with git tag integration
+- ✅ Complete documentation
+
+### **🚀 Ready for Production**
+- Both askappy-base and tostool are production-ready
+- Complete CI/CD workflow for automated builds
+- Flexible development and testing options
+- Comprehensive validation testing
+
+### **Next Steps**
+1. **Set up automated CI/CD** triggers on git tag pushes
+2. **Enable registry automation** for release builds
+3. **Add monitoring** for container health and performance
+4. **Scale workflow** for additional ASKAP tools as needed
+
+---
+
+**Built with ❤️ for ASKAP astronomical data processing**
