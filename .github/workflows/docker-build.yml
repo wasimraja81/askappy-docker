@@ -59,6 +59,15 @@ jobs:
             
     - name: Determine projects to build
       id: projects
+      #
+      # NOTE FOR MAINTAINERS:
+      #
+      # - In YAML expressions (e.g., 'if:' or 'with:'), use ${{ github.event_name }} and ${{ github.event.inputs.project }}.
+      #   These are always defined for 'github.event_name', but 'github.event.inputs.project' is only set for workflow_dispatch.
+      # - In shell scripts (under 'run:'), use $GITHUB_EVENT_NAME and $INPUT_PROJECT.
+      #   $GITHUB_EVENT_NAME is always set; $INPUT_PROJECT is only set for workflow_dispatch.
+      # - For push/pull_request triggers, $INPUT_PROJECT is empty/unset, so change detection is used instead.
+      #
       run: |
         if [[ "$GITHUB_EVENT_NAME" == "workflow_dispatch" ]]; then
           if [[ "$INPUT_PROJECT" == "all" || -z "$INPUT_PROJECT" ]]; then
@@ -176,7 +185,7 @@ jobs:
         "
 
     - name: Generate SBOM
-      if: "github.event_name != 'pull_request'
+      if: github.event_name != 'pull_request'
       uses: anchore/sbom-action@v0
       with:
         image: ${{ env.REGISTRY }}/wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1
