@@ -1,7 +1,7 @@
 #!/bin/bash
 
 #####################################################################
-# TOSTOOL Build Script - Ubuntu 24.04 with Local Repository Cloning
+# Build Script for TOSTOOL - Ubuntu 24.04 with Local Repository Cloning
 # Securely builds tostool image using local Git credentials
 #####################################################################
 
