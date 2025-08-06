@@ -296,6 +296,8 @@ jobs:
     runs-on: ubuntu-latest
     needs: detect-changes
     if: false  # Disabled - replaced by specific build jobs above
+    steps:
+      - run: echo "Legacy job disabled"
 
   security-scan:
     runs-on: ubuntu-latest
