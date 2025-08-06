@@ -279,5 +279,3 @@ make status   # Shows Docker builder status and available images
 4. **Scale workflow** for additional ASKAP tools as needed
 
 ---
-
-**Built with ❤️ for ASKAP astronomical data processing**
