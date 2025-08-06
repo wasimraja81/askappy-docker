@@ -92,9 +92,8 @@ ARG INSTALL_DIR=/_install
 
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
-# Install basic Python packages
-RUN python3 -m pip install -U pip --break-system-packages \
-    && pip3 install setuptools --break-system-packages \
+# Install basic Python packages (skip pip upgrade, use system pip 24.0)
+RUN pip3 install setuptools --break-system-packages \
     && pip3 install wheel --break-system-packages 
 
 #####################################################################
