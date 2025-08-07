@@ -8,10 +8,9 @@ set -euo pipefail
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-ROOT_DIR="${SCRIPT_DIR}/.."
 
 # Load helper to extract project variables
-source "${ROOT_DIR}/scripts/project_var.sh"
+source "${SCRIPT_DIR}/../scripts/project_var.sh"
 
 PROJECT="base-mpich"
 DATE=$(date +%Y%m%d)
