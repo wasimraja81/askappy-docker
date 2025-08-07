@@ -4,6 +4,7 @@
 .PHONY: help build test push clean list-projects
 
 
+
 # Project configurations (dynamically from projects.yml)
 DATE := $(shell date +%Y%m%d)
 SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
@@ -13,6 +14,12 @@ ASKAPPY_TAG := $(ASKAPPY_RAW_TAG)-$(DATE)-$(SHA)
 TOSTOOL_IMAGE := $(shell yq e '.projects.tostool.image_name' projects.yml)
 TOSTOOL_RAW_TAG := $(shell yq e '.projects.tostool.base_tag' projects.yml)
 TOSTOOL_TAG := $(TOSTOOL_RAW_TAG)-$(DATE)-$(SHA)
+BASE_MPICH_IMAGE := $(shell yq e '.projects."base-mpich".image_name' projects.yml)
+BASE_MPICH_RAW_TAG := $(shell yq e '.projects."base-mpich".base_tag' projects.yml)
+BASE_MPICH_TAG := $(BASE_MPICH_RAW_TAG)-$(DATE)-$(SHA)
+BASE_CASACORE_IMAGE := $(shell yq e '.projects."base-casacore".image_name' projects.yml)
+BASE_CASACORE_RAW_TAG := $(shell yq e '.projects."base-casacore".base_tag' projects.yml)
+BASE_CASACORE_TAG := $(BASE_CASACORE_RAW_TAG)-$(DATE)-$(SHA)
 
 PLATFORMS := linux/amd64,linux/arm64
 
@@ -22,6 +29,7 @@ GREEN := \033[32m
 YELLOW := \033[33m
 RED := \033[31m
 NC := \033[0m
+
 
 # Default target
 help: ## Show this help message
@@ -33,6 +41,10 @@ help: ## Show this help message
 	@awk 'BEGIN {FS = ":.*?## "} /^[a-zA-Z_-]+:.*?## / {printf "  $(GREEN)%-25s$(NC) %s\n", $$1, $$2}' $(MAKEFILE_LIST)
 	@echo ""
 	@echo "Project-specific commands:"
+	@echo "  $(GREEN)build-base-mpich$(NC)             Build base-mpich image"
+	@echo "  $(GREEN)push-base-mpich$(NC)              Push base-mpich image"
+	@echo "  $(GREEN)build-base-casacore$(NC)          Build base-casacore image"
+	@echo "  $(GREEN)push-base-casacore$(NC)           Push base-casacore image"
 	@echo "  $(GREEN)build-askappy$(NC)                Build askappy-base image"
 	@echo "  $(GREEN)build-askappy-local$(NC)          Build askappy-base locally (no push)"
 	@echo "  $(GREEN)build-tostool$(NC)                Build + PUSH tostool (production)"
@@ -42,20 +54,42 @@ help: ## Show this help message
 	@echo "  $(GREEN)test-askappy-local$(NC)           Test askappy-base local image"
 	@echo "  $(GREEN)test-tostool-local-base$(NC)      Test local-base build"
 	@echo "  $(GREEN)push-askappy$(NC)                 Push askappy-base image"
+	@echo "  $(GREEN)push-tostool$(NC)                 Push tostool image"
 	@echo "  $(GREEN)clean-temp$(NC)                   Clean temporary files"
 	@echo "  $(GREEN)tag-release$(NC)                  Tag and build release version"
 	@echo ""
 	@echo "Examples:"
-	@echo "  make build-askappy      # Build askappy-base project"
-	@echo "  make test-askappy       # Test askappy-base project"
-	@echo "  make build-all          # Build all enabled projects"
+	@echo "  make build-base-mpich     # Build base-mpich project"
+	@echo "  make build-base-casacore  # Build base-casacore project"
+	@echo "  make build-askappy        # Build askappy-base project"
+	@echo "  make test-askappy         # Test askappy-base project"
+	@echo "  make build-all            # Build all enabled projects"
+# base-mpich specific targets
+build-base-mpich: ## Build base-mpich Docker image
+	@echo "$(BLUE)Building base-mpich...$(NC)"
+	cd base-mpich && ./build.sh
+
+push-base-mpich: ## Push base-mpich image to Docker Hub
+	@echo "$(BLUE)Pushing base-mpich...$(NC)"
+	docker push $(BASE_MPICH_IMAGE):$(BASE_MPICH_TAG)
+	docker push $(BASE_MPICH_IMAGE):latest
+
+# base-casacore specific targets
+build-base-casacore: ## Build base-casacore Docker image
+	@echo "$(BLUE)Building base-casacore...$(NC)"
+	cd base-casacore && ./build.sh
+
+push-base-casacore: ## Push base-casacore image to Docker Hub
+	@echo "$(BLUE)Pushing base-casacore...$(NC)"
+	docker push $(BASE_CASACORE_IMAGE):$(BASE_CASACORE_TAG)
+	docker push $(BASE_CASACORE_IMAGE):latest
 
 # Project listing
 list-projects: ## List all available projects
 	@echo "$(BLUE)Available Projects:$(NC)"
 	@if command -v yq >/dev/null 2>&1; then \
-	  for project in askappy-base tostool; do \
-		enabled=$$(yq e ".projects.$$project.enabled" projects.yml); \
+	  for project in askappy-base tostool base-mpich base-casacore; do \
+		enabled=$$(yq e ".projects.$$project.enabled" projects.yml 2>/dev/null || echo "false"); \
 		if [ "$$enabled" = "true" ]; then \
 		  color="$(GREEN)"; status="[enabled]"; \
 		else \
@@ -70,6 +104,8 @@ list-projects: ## List all available projects
 	  echo "  $(YELLOW)yq not found. Showing static project list.$(NC)"; \
 	  echo "  $(GREEN)askappy-base$(NC) - Base image with casacore ($(ASKAPPY_IMAGE):$(ASKAPPY_TAG))"; \
 	  echo "  $(YELLOW)tostool$(NC)      - TOSTOOL processing tools ($(TOSTOOL_IMAGE):$(TOSTOOL_TAG)) [disabled - Ubuntu 24.04 ready]"; \
+	  echo "  $(YELLOW)base-mpich$(NC)   - MPICH only ($(BASE_MPICH_IMAGE):$(BASE_MPICH_TAG))"; \
+	  echo "  $(YELLOW)base-casacore$(NC) - MPICH+Casacore ($(BASE_CASACORE_IMAGE):$(BASE_CASACORE_TAG))"; \
 	fi
 
 # Generic build targets

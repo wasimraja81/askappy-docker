@@ -1,0 +1,62 @@
+# syntax=docker/dockerfile:1
+
+#####################################################################
+# base-casacore Docker Image - Ubuntu 24.04 with MPICH and Casacore
+# This image is used as a base for askappy-base and other stacks
+#####################################################################
+
+ARG TARGETPLATFORM=linux/amd64
+FROM --platform=${TARGETPLATFORM} wasimraja81/base-mpich:latest as mpich-base
+
+ARG TARGETPLATFORM
+ARG DEBIAN_FRONTEND=noninteractive
+
+# Build-time metadata
+ARG BUILD_DATE
+ARG VCS_REF
+ARG VERSION
+
+ARG BUILD_DIR=/_build
+ARG MEASURES_DATA="/_build/measures_data"
+ARG INSTALL_DIR=/_install
+
+RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
+
+# Download measures data
+RUN cd ${MEASURES_DATA} \
+    && wget -q ftp://ftp.astron.nl/outgoing/Measures/WSRT_Measures.ztar \
+    && tar xf *.ztar \
+    && rm *.ztar
+
+# Build casacore
+ARG CASACORE_VERSION=v3.7.1
+ARG CPU_CORE_COUNT=4
+RUN cd ${BUILD_DIR} \
+    && git clone --depth 1 --branch ${CASACORE_VERSION} https://github.com/casacore/casacore.git \
+    && cd casacore \
+    && mkdir build \
+    && cd build \
+    && cmake \
+        -DDATA_DIR=${MEASURES_DATA} \
+        -DUSE_OPENMP=OFF \
+        -DBUILD_PYTHON3=ON \
+        -DUSE_THREADS=ON \
+        -DCMAKE_BUILD_TYPE=Release \
+        .. \
+    && make -j${CPU_CORE_COUNT} install \
+    && ldconfig \
+    && cd / \
+    && rm -rf ${BUILD_DIR}/casacore
+
+# Metadata labels
+LABEL org.opencontainers.image.title="base-casacore" \
+      org.opencontainers.image.description="Base image with MPICH and Casacore" \
+      org.opencontainers.image.version="${VERSION}" \
+      org.opencontainers.image.created="${BUILD_DATE}" \
+      org.opencontainers.image.revision="${VCS_REF}" \
+      org.opencontainers.image.vendor="CSIRO" \
+      org.opencontainers.image.authors="Wasim Raja <Wasim.Raja@csiro.au>" \
+      casacore.version="v3.7.1" \
+      mpich.base.image="wasimraja81/base-mpich:latest"
+
+CMD ["/bin/bash"]

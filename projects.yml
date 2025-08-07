@@ -41,14 +41,39 @@ projects:
       mpich.version: "4.3.1"
       base.image: "wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.7.1"
 
-  # Future projects can be added here
-  # example-project:
-  #   name: "example-project"
-  #   description: "Example project for future tools"
-  #   registry: "docker.io"
-  #   image_name: "wasimraja81/example-project"
-  #   base_tag: "latest"
-  #   dockerfile: "Dockerfile"
-  #   context: "./example-project"
-  #   platforms: "linux/amd64,linux/arm64"
-  #   enabled: false
+  base-mpich:
+    name: "base-mpich"
+    description: "Base image with MPICH only (no casacore), for scientific stack builds"
+    registry: "docker.io"
+    image_name: "wasimraja81/base-mpich"
+    base_tag: "mpich-4.3.1"
+    dockerfile: "Dockerfile"
+    context: "./base-mpich"
+    platforms: "linux/amd64"
+    enabled: false
+    labels:
+      org.opencontainers.image.title: "base-mpich"
+      org.opencontainers.image.description: "Base image with MPICH only"
+      org.opencontainers.image.vendor: "CSIRO"
+      repo.name: "base-mpich"
+      repo.version: "mpich-4.3.1"
+      mpich.version: "4.3.1"
+
+  base-casacore:
+    name: "base-casacore"
+    description: "Base image with MPICH and Casacore, for scientific stack builds"
+    registry: "docker.io"
+    image_name: "wasimraja81/base-casacore"
+    base_tag: "casacore-3.7.1"
+    dockerfile: "Dockerfile"
+    context: "./base-casacore"
+    platforms: "linux/amd64"
+    enabled: false
+    labels:
+      org.opencontainers.image.title: "base-casacore"
+      org.opencontainers.image.description: "Base image with MPICH and Casacore"
+      org.opencontainers.image.vendor: "CSIRO"
+      repo.name: "base-casacore"
+      repo.version: "casacore-3.7.1"
+      casacore.version: "v3.7.1"
+      mpich.base.image: "wasimraja81/base-mpich:latest"
