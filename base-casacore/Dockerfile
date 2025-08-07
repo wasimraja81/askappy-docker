@@ -26,7 +26,7 @@ ARG INSTALL_DIR=/_install
 RUN apt-get update && \
     apt-get install -y build-essential g++ python3.10-dev wget && \
     cd /tmp && \
-    wget https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/boost_1_83_0.tar.gz && \
+    wget -O boost_1_83_0.tar.gz https://sourceforge.net/projects/boost/files/boost/1.83.0/boost_1_83_0.tar.gz/download && \
     tar xzf boost_1_83_0.tar.gz && \
     cd boost_1_83_0 && \
     ./bootstrap.sh --with-python=python3.10 && \
