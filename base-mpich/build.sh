@@ -76,15 +76,7 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check if required files exist
-    local required_files=("requirements.txt")
-    for file in "${required_files[@]}"; do
-        if [[ ! -f "$file" ]]; then
-            log_error "Required file not found: $file"
-            exit 1
-        fi
-    done
-    
+    # No required files for base-mpich build
     log_success "All prerequisites met"
 }
 
