@@ -23,7 +23,7 @@ ARG INSTALL_DIR=/_install
 
 # Ensure correct Boost.Python for Python 3.10 is available
 # This assumes the base image used for building has python3.10
-RUN apt-get update && apt-get install -y libboost-python-dev libboost-python1.83.0
+RUN apt-get update && apt-get install -y libboost-python3-dev libboost-python3-1.83.0
 
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
