@@ -67,6 +67,7 @@ RUN cd ${BUILD_DIR} \
 ENV CMAKE_PREFIX_PATH=/usr/local:/usr/lib/x86_64-linux-gnu
 
 # Install Python packages (including python-casacore) 
+RUN apt-get update && apt-get install -y ninja-build
 COPY requirements.txt /tmp/requirements.txt
 RUN pip3 install --no-deps --no-cache-dir -r /tmp/requirements.txt \
     && pip3 install --default-timeout=120 --no-binary python-casacore python-casacore \
