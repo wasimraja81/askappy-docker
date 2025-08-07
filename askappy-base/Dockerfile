@@ -86,9 +86,6 @@ RUN apt-get update -qq \
     && rm -rf /tmp/* \
     && rm -rf /var/tmp/*
 
-# Ensure correct Boost.Python for Python 3.10 is available
-RUN apt-get update && apt-get install -y libboost-python-dev libboost-python1.83.0
-
 # Build directories
 ARG BUILD_DIR=/_build
 ARG MEASURES_DATA="/_build/measures_data"
@@ -108,6 +105,9 @@ RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
 
 # Ensure python is linked to python3.10
 RUN ln -sf /usr/bin/python3 /usr/local/bin/python
+
+# Ensure correct Boost.Python for Python 3.10 is available
+RUN apt-get update && apt-get install -y libboost-python-dev libboost-python1.83.0
 
 # Upgrade pip, install setuptools<60 and wheel globally for python3.10
 RUN python3 -m pip install --ignore-installed 'pip<22' 'setuptools<59' wheel --break-system-packages

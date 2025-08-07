@@ -51,13 +51,15 @@ projects:
     context: "./base-mpich"
     platforms: "linux/amd64"
     enabled: false
+    base_image: "ubuntu:24.04"
     labels:
       org.opencontainers.image.title: "base-mpich"
-      org.opencontainers.image.description: "Base image with MPICH only"
+      org.opencontainers.image.description: "Base image with MPICH only, based on ubuntu:24.04"
       org.opencontainers.image.vendor: "CSIRO"
       repo.name: "base-mpich"
       repo.version: "mpich-4.3.1"
       mpich.version: "4.3.1"
+      base.image: "ubuntu:24.04"
 
   base-casacore:
     name: "base-casacore"
