@@ -3,11 +3,16 @@
 
 .PHONY: help build test push clean list-projects
 
-# Project configurations
-ASKAPPY_IMAGE := wasimraja81/askappy-ubuntu-24.04
-ASKAPPY_TAG := base-mpich-casacore-3.6.1
-TOSTOOL_IMAGE := wasimraja81/tostool-ubuntu-24.04
-TOSTOOL_TAG := 2.28.0
+
+# Project configurations (dynamically from projects.yml)
+DATE := $(shell date +%Y%m%d)
+SHA := $(shell git rev-parse --short HEAD 2>/dev/null || echo unknown)
+ASKAPPY_IMAGE := $(shell yq e '.projects."askappy-base".image_name' projects.yml)
+ASKAPPY_RAW_TAG := $(shell yq e '.projects."askappy-base".base_tag' projects.yml)
+ASKAPPY_TAG := $(ASKAPPY_RAW_TAG)-$(DATE)-$(SHA)
+TOSTOOL_IMAGE := $(shell yq e '.projects.tostool.image_name' projects.yml)
+TOSTOOL_RAW_TAG := $(shell yq e '.projects.tostool.base_tag' projects.yml)
+TOSTOOL_TAG := $(TOSTOOL_RAW_TAG)-$(DATE)-$(SHA)
 
 PLATFORMS := linux/amd64,linux/arm64
 
@@ -48,8 +53,24 @@ help: ## Show this help message
 # Project listing
 list-projects: ## List all available projects
 	@echo "$(BLUE)Available Projects:$(NC)"
-	@echo "  $(GREEN)askappy-base$(NC) - Base image with casacore ($(ASKAPPY_IMAGE):$(ASKAPPY_TAG))"
-	@echo "  $(YELLOW)tostool$(NC)      - TOSTOOL processing tools ($(TOSTOOL_IMAGE):$(TOSTOOL_TAG)) [disabled - Ubuntu 24.04 ready]"
+	@if command -v yq >/dev/null 2>&1; then \
+	  for project in askappy-base tostool; do \
+		enabled=$$(yq e ".projects.$$project.enabled" projects.yml); \
+		if [ "$$enabled" = "true" ]; then \
+		  color="$(GREEN)"; status="[enabled]"; \
+		else \
+		  color="$(YELLOW)"; status="[disabled]"; \
+		fi; \
+		image_var=$$(echo $$project | tr '-' '_' | tr '[:lower:]' '[:upper:]')_IMAGE; \
+		tag_var=$$(echo $$project | tr '-' '_' | tr '[:lower:]' '[:upper:]')_TAG; \
+		image=$${!image_var}; tag=$${!tag_var}; \
+		printf "  %b%s%b - %s (%s:%s) %s\n" "$$color" "$$project" "$(NC)" "$$project" "$$image" "$$tag" "$$status"; \
+	  done; \
+	else \
+	  echo "  $(YELLOW)yq not found. Showing static project list.$(NC)"; \
+	  echo "  $(GREEN)askappy-base$(NC) - Base image with casacore ($(ASKAPPY_IMAGE):$(ASKAPPY_TAG))"; \
+	  echo "  $(YELLOW)tostool$(NC)      - TOSTOOL processing tools ($(TOSTOOL_IMAGE):$(TOSTOOL_TAG)) [disabled - Ubuntu 24.04 ready]"; \
+	fi
 
 # Generic build targets
 build-all: build-askappy ## Build all enabled projects
@@ -325,6 +346,6 @@ ci-test-askappy: ci-build-askappy ## Test askappy-base CI build
 # Future project enabling
 enable-tostool: ## Enable tostool project (remove from gitignore)
 	@echo "$(BLUE)Enabling tostool project...$(NC)"
-	@sed -i '' '/^tostool\/$/d' .gitignore
+	@sed -i '' '/^tostool\//d' .gitignore
 	@echo "$(GREEN)tostool project enabled! You can now build it.$(NC)"
 	@echo "$(YELLOW)Don't forget to commit the .gitignore change$(NC)"

@@ -14,13 +14,23 @@ set -euo pipefail  # Exit on error, undefined vars, pipe failures
 
 # Configuration
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-IMAGE_NAME="wasimraja81/askappy-ubuntu-24.04"
-BASE_TAG="base-mpich-casacore-3.6.1"
+
+# Load helper to extract project variables
+source "${SCRIPT_DIR}/../scripts/project_var.sh"
+
+PROJECT="askappy-base"
+DATE=$(date +%Y%m%d)
+SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
+
+IMAGE_NAME=$(get_project_var "$PROJECT" image_name)
+RAW_BASE_TAG=$(get_project_var "$PROJECT" base_tag)
+BASE_TAG="${RAW_BASE_TAG}-${DATE}-${SHA}"
+LATEST_TAG="${PROJECT}-latest"
 
 # Build metadata
 BUILD_DATE=$(date -u +'%Y-%m-%dT%H:%M:%SZ')
-VCS_REF=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
-VERSION="${BASE_TAG}-$(date +%Y%m%d)"
+VCS_REF="$SHA"
+VERSION="${BASE_TAG}"
 
 # Platform support
 PLATFORMS="linux/amd64,linux/arm64"
@@ -104,16 +114,16 @@ setup_buildx() {
 # Function to build and push image
 build_and_push() {
     local dockerfile="${1:-Dockerfile}"
-    
+
     local full_tag="${IMAGE_NAME}:${BASE_TAG}"
-    local latest_tag="${IMAGE_NAME}:latest"
-    
+    local latest_tag="${IMAGE_NAME}:${LATEST_TAG}"
+
     log_info "Building and pushing: $full_tag"
     log_info "Dockerfile: $dockerfile"
     log_info "Platforms: $PLATFORMS"
     log_info "Build date: $BUILD_DATE"
     log_info "VCS ref: $VCS_REF"
-    
+
     # Build arguments
     local build_args=(
         "--build-arg" "BUILD_DATE=${BUILD_DATE}"
@@ -121,7 +131,7 @@ build_and_push() {
         "--build-arg" "VERSION=${VERSION}"
         "--build-arg" "CPU_CORE_COUNT=$(nproc)"
     )
-    
+
     # Build and push
     docker buildx build \
         --platform "${PLATFORMS}" \
@@ -132,7 +142,7 @@ build_and_push() {
         "${build_args[@]}" \
         --progress=plain \
         .
-    
+
     log_success "Successfully built and pushed: $full_tag"
     log_success "Successfully built and pushed: $latest_tag"
 }
@@ -247,20 +257,20 @@ main() {
     
     # Show image information
     show_image_info "${IMAGE_NAME}:${BASE_TAG}"
-    
+
     # Test the image unless skipped
     if [[ "$skip_test" != true ]]; then
         test_image "${IMAGE_NAME}:${BASE_TAG}"
     fi
-    
+
     # Cleanup unless skipped
     if [[ "$skip_cleanup" != true ]]; then
         cleanup
     fi
-    
+
     log_success "All operations completed successfully!"
     log_info "Image available at: ${IMAGE_NAME}:${BASE_TAG}"
-    log_info "Latest tag: ${IMAGE_NAME}:latest"
+    log_info "Latest tag: ${IMAGE_NAME}:${LATEST_TAG}"
 }
 
 # Run main function with all arguments

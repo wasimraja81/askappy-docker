@@ -9,7 +9,6 @@ dist/
 *.egg-info/
 
 # Temporary repositories (security)
-tostool/askap-repos/
 */askap-repos/
 
 # Docker
@@ -31,7 +30,6 @@ tostool/askap-repos/
 Thumbs.db
 
 # Embedded git repositories (submodules should be properly added)
-tostool/tmp/python-askap-interfaces/
 
 # Temporarily exclude tostool until ready
 #tostool/

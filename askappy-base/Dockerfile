@@ -92,9 +92,25 @@ ARG INSTALL_DIR=/_install
 
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
-# Install basic Python packages (skip pip upgrade, use system pip 24.0)
-RUN pip3 install setuptools --break-system-packages \
-    && pip3 install wheel --break-system-packages 
+# Install python3.10 and pip3
+RUN apt-get update && \
+    apt-get install -y software-properties-common gfortran && \
+    add-apt-repository -y ppa:deadsnakes/ppa && \
+    apt-get update && \
+    apt-get install -y python3.10-dev python3.10 python3.10-distutils python3-pip
+
+# Make python3 point to python3.10
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.10 1
+
+# Ensure python is linked to python3.10
+RUN ln -sf /usr/bin/python3 /usr/local/bin/python
+
+# Upgrade pip, install setuptools<60 and wheel globally for python3.10
+RUN python3 -m pip install --ignore-installed 'pip<22' 'setuptools<59' wheel --break-system-packages
+
+# Hereonwards, you may not be able to use the --break-system-packages option
+RUN python3 -m pip install --ignore-installed 'numpy<1.24'
+
 
 #####################################################################
 # Stage 2: Build MPICH (isolated layer)
@@ -121,7 +137,7 @@ RUN cd ${BUILD_DIR} \
 #####################################################################
 FROM mpich-builder as casacore-builder
 
-ARG CASACORE_VERSION=v3.6.1
+ARG CASACORE_VERSION=v3.7.1
 
 # Download measures data
 RUN cd ${MEASURES_DATA} \
@@ -157,8 +173,8 @@ ENV CMAKE_PREFIX_PATH=/usr/local:/usr/lib/x86_64-linux-gnu
 
 # Install Python packages (including python-casacore) 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/requirements.txt \
-    && pip3 install --default-timeout=120 --no-binary python-casacore --break-system-packages python-casacore \
+RUN pip3 install --no-deps --no-cache-dir -r /tmp/requirements.txt \
+    && pip3 install --default-timeout=120 --no-binary python-casacore python-casacore \
     && rm /tmp/requirements.txt
 
 # Clean up build artifacts to reduce image size
@@ -183,8 +199,8 @@ LABEL org.opencontainers.image.title="askappy-base" \
       org.opencontainers.image.vendor="CSIRO" \
       org.opencontainers.image.authors="Wasim Raja <Wasim.Raja@csiro.au>" \
       repo.name="askappy" \
-      repo.version="base-casacore-3.6.1" \
-      casacore.version="v3.6.1" \
+      repo.version="base-casacore-3.7.1" \
+      casacore.version="v3.7.1" \
       mpich.version="4.3.1"
 
 # Health check

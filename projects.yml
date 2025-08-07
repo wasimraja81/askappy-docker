@@ -7,18 +7,18 @@ projects:
     description: "Base image with casacore and python tools needed by ASKAPpipeline in ASKAP operations"
     registry: "docker.io"
     image_name: "wasimraja81/askappy-ubuntu-24.04"
-    base_tag: "base-mpich-casacore-3.6.1"
+    base_tag: "askappy-base-mpich-casacore-3.7.1"
     dockerfile: "Dockerfile"
     context: "./askappy-base"
-    platforms: "linux/amd64,linux/arm64"
-    enabled: true
+    platforms: "linux/amd64"
+    enabled: false
     labels:
       org.opencontainers.image.title: "askappy-base"
       org.opencontainers.image.description: "Base image with casacore and python tools needed by ASKAPpipeline in ASKAP operations"
       org.opencontainers.image.vendor: "CSIRO"
       repo.name: "askappy"
-      repo.version: "base-casacore-3.6.1"
-      casacore.version: "v3.6.1"
+      repo.version: "base-casacore-3.7.1"
+      casacore.version: "v3.7.1"
       mpich.version: "4.3.1"
 
   tostool:
@@ -29,7 +29,7 @@ projects:
     base_tag: "2.28.0"
     dockerfile: "Dockerfile"
     context: "./tostool"
-    platforms: "linux/amd64,linux/arm64"
+    platforms: "linux/amd64"
     enabled: false  # Set to true when ready to build
     labels:
       org.opencontainers.image.title: "tostool"
@@ -39,7 +39,7 @@ projects:
       repo.version: "2.28.0"
       casacore.version: "v3.6.1"
       mpich.version: "4.3.1"
-      base.image: "wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1"
+      base.image: "wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.7.1"
 
   # Future projects can be added here
   # example-project:
