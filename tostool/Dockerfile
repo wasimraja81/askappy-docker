@@ -4,9 +4,9 @@
 # TOSTOOL Docker Image - Ubuntu 24.04 with ASKAP TOS Tools
 # Built on askappy-base with casacore and scientific computing stack
 #####################################################################
-
+ARG BASE_CASACORE_VERSION=casacore-3.7.1-20250808-abd50aa
 ARG TARGETPLATFORM=linux/amd64
-FROM --platform=${TARGETPLATFORM} wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1
+FROM --platform=${TARGETPLATFORM} wasimraja81/base-casacore:${BASE_CASACORE_VERSION} as casacore-base
 
 ARG TARGETPLATFORM
 ARG DEBIAN_FRONTEND=noninteractive
@@ -21,7 +21,7 @@ ARG REPO_VERSION  # Must be provided by build.sh or build system
 ARG REPO_NAME=tostool
 
 # Build and install directories
-ARG BUILD_DIR=/tmp/
+ARG BUILD_DIR=_/build
 ARG INSTALL_DIR=/usr/local/askappy/
 
 # Set working directory
@@ -34,18 +34,16 @@ ENV TZ=Etc/UTC
 ENV TOSTOOL_VERSION="${REPO_VERSION}"
 
 # Install TOSTOOL specific Python requirements
-COPY requirements.txt /tmp/tostool-requirements.txt
-RUN pip3 install --no-cache-dir --break-system-packages -r /tmp/tostool-requirements.txt \
-    && rm /tmp/tostool-requirements.txt
+# All requirements should be satisfied by base image
 
 # Copy pre-cloned ASKAP repositories (cloned locally with user credentials)
 # These should be cloned by the build script before docker build
-COPY askap-repos/askap-dev ${BUILD_DIR}/askap-dev
-COPY askap-repos/python-askap ${BUILD_DIR}/python-askap
-COPY askap-repos/python-parset ${BUILD_DIR}/python-parset
-COPY askap-repos/python-askap-interfaces ${BUILD_DIR}/python-askap-interfaces
-COPY askap-repos/python-iceutils ${BUILD_DIR}/python-iceutils
-COPY askap-repos/python-askap-cli ${BUILD_DIR}/python-askap-cli
+COPY askap-tos/askap-dev ${BUILD_DIR}/askap-dev
+COPY askap-tos/python-askap ${BUILD_DIR}/python-askap
+COPY askap-tos/python-parset ${BUILD_DIR}/python-parset
+COPY askap-tos/python-askap-interfaces ${BUILD_DIR}/python-askap-interfaces
+COPY askap-tos/python-iceutils ${BUILD_DIR}/python-iceutils
+COPY askap-tos/python-askap-cli ${BUILD_DIR}/python-askap-cli
 
 # Build and install ASKAP tools
 RUN echo "Installing ASKAP tools from local copies..." \
@@ -53,15 +51,15 @@ RUN echo "Installing ASKAP tools from local copies..." \
     && mkdir -p ${INSTALL_DIR} \
     # Install python packages with Ubuntu 24.04 compatibility
     && echo "Installing python-askap..." \
-    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap \
+    && pip3 install ${BUILD_DIR}/python-askap \
     && echo "Installing python-parset..." \
-    && pip3 install --break-system-packages ${BUILD_DIR}/python-parset \
+    && pip3 install ${BUILD_DIR}/python-parset \
     && echo "Installing python-askap-interfaces..." \
-    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap-interfaces \
+    && pip3 install ${BUILD_DIR}/python-askap-interfaces \
     && echo "Installing python-iceutils..." \
-    && pip3 install --break-system-packages ${BUILD_DIR}/python-iceutils \
+    && pip3 install ${BUILD_DIR}/python-iceutils \
     && echo "Installing python-askap-cli..." \
-    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap-cli \
+    && pip3 install ${BUILD_DIR}/python-askap-cli \
     # Copy ICE configuration from askap-dev
     && cp ${BUILD_DIR}/askap-dev/config/tos-ice.cfg ${INSTALL_DIR} \
     && echo "ASKAP tools installation completed successfully" \
@@ -74,8 +72,7 @@ ENV ICE_CONFIG=${INSTALL_DIR}/tos-ice.cfg
 
 # Copy build files for record keeping
 RUN mkdir -p /build-records
-COPY Dockerfile /build-records/
-COPY requirements.txt /build-records/
+COPY Dockerfile /build-records
 
 # Metadata labels
 LABEL org.opencontainers.image.title="tostool" \
@@ -90,7 +87,7 @@ LABEL org.opencontainers.image.title="tostool" \
       repo.maintainer.name="Wasim Raja" \
       repo.maintainer.email="Wasim.Raja@csiro.au" \
       tostool.version="${REPO_VERSION}" \
-      base.image="wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1"
+      base.image="wasimraja81/askappy-ubuntu-24.04:tostool-${REPO_VERSION}" 
 
 RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 
