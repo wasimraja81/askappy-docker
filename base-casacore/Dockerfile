@@ -16,9 +16,13 @@ ARG BUILD_DATE
 ARG VCS_REF
 ARG VERSION
 
+
 ARG BUILD_DIR=/_build
 ARG MEASURES_DATA="/_build/measures_data"
 ARG INSTALL_DIR=/_install
+
+# Ensure correct Boost.Python for Python 3.10 is available
+RUN apt-get update && apt-get install -y libboost-python-dev libboost-python1.83.0
 
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 

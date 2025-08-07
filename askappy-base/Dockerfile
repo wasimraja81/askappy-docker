@@ -80,10 +80,14 @@ RUN apt-get update -qq \
         # Archive tools
         fuse \
         libfuse2 \
+
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
     && rm -rf /var/tmp/*
+
+# Ensure correct Boost.Python for Python 3.10 is available
+RUN apt-get update && apt-get install -y libboost-python-dev libboost-python1.83.0
 
 # Build directories
 ARG BUILD_DIR=/_build
