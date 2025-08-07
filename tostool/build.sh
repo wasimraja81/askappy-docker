@@ -115,6 +115,7 @@ build_and_push() {
         "--build-arg" "BUILD_DATE=${BUILD_DATE}"
         "--build-arg" "VCS_REF=${VCS_REF}"
         "--build-arg" "VERSION=${VERSION}"
+        "--build-arg" "REPO_VERSION=${VERSION}"
         "--build-arg" "CPU_CORE_COUNT=$(nproc)"
     )
 
