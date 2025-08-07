@@ -21,9 +21,18 @@ ARG BUILD_DIR=/_build
 ARG MEASURES_DATA="/_build/measures_data"
 ARG INSTALL_DIR=/_install
 
-# Ensure correct Boost.Python for Python 3.10 is available
-# This assumes the base image used for building has python3.10
-RUN apt-get update && apt-get install -y libboost-python3-dev libboost-python3-1.83.0
+
+# Build Boost.Python for Python 3.10 from source
+RUN apt-get update && \
+    apt-get install -y build-essential g++ python3.10-dev wget && \
+    cd /tmp && \
+    wget https://boostorg.jfrog.io/artifactory/main/release/1.83.0/source/boost_1_83_0.tar.gz && \
+    tar xzf boost_1_83_0.tar.gz && \
+    cd boost_1_83_0 && \
+    ./bootstrap.sh --with-python=python3.10 && \
+    ./b2 --with-python -j$(nproc) && \
+    ./b2 --with-python install && \
+    cd / && rm -rf /tmp/boost_1_83_0* /tmp/boost_1_83_0.tar.gz
 
 RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR} ${MEASURES_DATA}
 
