@@ -78,4 +78,4 @@ projects:
       repo.name: "base-casacore"
       repo.version: "casacore-3.7.1"
       casacore.version: "v3.7.1"
-      mpich.base.image: "wasimraja81/base-mpich:latest"
+      mpich.base.image: "wasimraja81/base-mpich:mpich-4.3.1-20250807-53a3b2a"
