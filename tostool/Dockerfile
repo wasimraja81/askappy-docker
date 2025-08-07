@@ -51,7 +51,7 @@ RUN echo "Installing ASKAP tools from local copies..." \
     && mkdir -p ${INSTALL_DIR} \
     # Install python packages with Ubuntu 24.04 compatibility
     && echo "Installing python-askap..." \
-    && pip3 install --break-system-packages${BUILD_DIR}/python-askap \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap \
     && echo "Installing python-parset..." \
     && pip3 install --break-system-packages ${BUILD_DIR}/python-parset \
     && echo "Installing python-askap-interfaces..." \
