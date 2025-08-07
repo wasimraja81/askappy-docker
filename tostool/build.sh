@@ -19,10 +19,19 @@ log_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
 log_warn() { echo -e "${YELLOW}[WARN]${NC} $1"; }
 log_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-# Image configuration
-REGISTRY="wasimraja81"
-IMAGE_NAME="tostool-ubuntu-24.04"
-TAG="2.28.0"
+
+# Source project_var.sh to extract variables from projects.yml
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+ROOT_DIR="${SCRIPT_DIR}/.."
+source "${ROOT_DIR}/scripts/project_var.sh"
+
+# Extract variables for tostool
+REGISTRY=$(project_var tostool registry)
+IMAGE_NAME=$(project_var tostool image_name)
+RAW_TAG=$(project_var tostool base_tag)
+DATE=$(date +%Y%m%d)
+SHA=$(git rev-parse --short HEAD 2>/dev/null || echo unknown)
+TAG="${RAW_TAG}-${DATE}-${SHA}"
 FULL_IMAGE="${REGISTRY}/${IMAGE_NAME}:${TAG}"
 PLATFORMS="linux/amd64,linux/arm64"
 

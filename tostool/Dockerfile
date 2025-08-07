@@ -92,6 +92,8 @@ LABEL org.opencontainers.image.title="tostool" \
       tostool.version="${REPO_VERSION}" \
       base.image="wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.6.1"
 
+RUN ln -sf /usr/bin/python3 /usr/local/bin/python
+
 # Health check to verify ASKAP tools are properly installed
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
     CMD python3 -c "import askap; import casacore; print('TOSTOOL OK')" || exit 1
