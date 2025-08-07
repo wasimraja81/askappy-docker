@@ -16,8 +16,9 @@ PROJECT="base-mpich"
 DATE=$(date +%Y%m%d)
 SHA=$(git rev-parse --short HEAD 2>/dev/null || echo "unknown")
 
-IMAGE_NAME=$(project_var $PROJECT image_name)
-RAW_BASE_TAG=$(project_var $PROJECT base_tag)
+# Use the correct function name from project_var.sh
+IMAGE_NAME=$(get_project_var $PROJECT image_name)
+RAW_BASE_TAG=$(get_project_var $PROJECT base_tag)
 BASE_TAG="${RAW_BASE_TAG}-${DATE}-${SHA}"
 LATEST_TAG="${PROJECT}-latest"
 
@@ -27,7 +28,7 @@ VCS_REF="$SHA"
 VERSION="${BASE_TAG}"
 
 # Platform support
-PLATFORMS=$(project_var $PROJECT platforms)
+PLATFORMS=$(get_project_var $PROJECT platforms)
 
 # Colors for output
 RED='\033[0;31m'
