@@ -85,12 +85,12 @@ setup_buildx() {
     log_info "Setting up Docker buildx..."
     
     # Create and use a new builder if it doesn't exist
-    if ! docker buildx inspect askappy-builder >/dev/null 2>&1; then
+    if ! docker buildx inspect mpich-builder >/dev/null 2>&1; then
         log_info "Creating new buildx builder..."
-        docker buildx create --name askappy-builder --use
+        docker buildx create --name mpich-builder --use
     else
         log_info "Using existing buildx builder..."
-        docker buildx use askappy-builder
+        docker buildx use mpich-builder
     fi
     
     # Bootstrap the builder
