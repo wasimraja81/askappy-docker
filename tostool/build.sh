@@ -149,29 +149,30 @@ test_image() {
     log_info "Testing image: $tag"
     
     # Test basic Python and casacore functionality
-    docker run --rm --platform linux/amd64 "${tag}" python3 -c "
+    docker run --rm --platform linux/amd64 "${tag}" bash -c "\
+python3 -c '
 import sys
-print(f'Python version: {sys.version}')
+print(f"Python version: {sys.version}")
 try:
     import casacore
-    print('Casacore imported successfully')
-    print(f'Casacore version: {casacore.__version__}')
+    print("Casacore imported successfully")
+    print(f"Casacore version: {casacore.__version__}")
 except ImportError as e:
-    print(f'Casacore import failed: {e}')
+    print(f"Casacore import failed: {e}")
     sys.exit(1)
-    
 try:
     import numpy as np
     import astropy
     import pandas as pd
-    print('Core scientific packages imported successfully')
+    print("Core scientific packages imported successfully")
 except ImportError as e:
-    print(f'Scientific package import failed: {e}')
+    print(f"Scientific package import failed: {e}")
     sys.exit(1)
-    
-print('All tests passed!')
+print("All tests passed!")
+'
+echo "\nTesting schedblock CLI..."
+schedblock info -h
 "
-    
     if [[ $? -eq 0 ]]; then
         log_success "Image test passed"
     else
