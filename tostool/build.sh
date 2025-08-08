@@ -148,19 +148,17 @@ test_image() {
     local tag="$1"
     log_info "Testing image: $tag"
     
-    # Test basic Python and casacore functionality
-echo "\nTesting schedblock CLI..."
-schedblock info -h
+    # Test basic Python and casacore functionality, and schedblock CLI inside the container
     docker run --rm --platform linux/amd64 "${tag}" bash -c '
 cat <<EOF | python3
 import sys
-print(f("Python version: {sys.version}"))
+print(f"Python version: {sys.version}")
 try:
     import casacore
     print("Casacore imported successfully")
-    print(f("Casacore version: {casacore.__version__}"))
+    print(f"Casacore version: {casacore.__version__}")
 except ImportError as e:
-    print(f("Casacore import failed: {e}"))
+    print(f"Casacore import failed: {e}")
     sys.exit(1)
 try:
     import numpy as np
@@ -168,7 +166,7 @@ try:
     import pandas as pd
     print("Core scientific packages imported successfully")
 except ImportError as e:
-    print(f("Scientific package import failed: {e}"))
+    print(f"Scientific package import failed: {e}")
     sys.exit(1)
 print("All tests passed!")
 EOF
