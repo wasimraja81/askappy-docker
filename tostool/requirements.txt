@@ -15,6 +15,7 @@ setuptools<59
 pyerfa
 astropy-iers-data
 pyyaml
+requests
 astropy
 
 # matplotlib

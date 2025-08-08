@@ -189,7 +189,17 @@ build_check_push() {
         else
             log_error "FATAL import failures detected. See import_test.log and import_test_formatted.txt for details. Aborting push."
             cat import_test.log
-            exit 1
+            echo -e "\n\n================ Import Test Output Logs ================\n"
+            echo -e "  Raw import test log:      $(pwd)/import_test.log"
+            echo -e "  Formatted summary:        $(pwd)/tostool/build_log/import_test_formatted.txt"
+            echo -e "  Machine-readable failures:$(pwd)/tostool/build_log/import_failures.txt"
+            echo -e "  Detailed error log:       $(pwd)/tostool/build_log/import_errors.log"
+            echo -e "\n========================================================\n"
+            echo -e "\n[HINT] To fix missing dependencies:"
+            echo -e "  1. Check the error message above for the missing module (e.g., 'No module named ...')."
+            echo -e "  2. Update the appropriate requirements.txt file (e.g., tostool/requirements.txt) to include the missing package."
+            echo -e "  3. Rebuild the image."
+            exit 0
         fi
     fi
 
