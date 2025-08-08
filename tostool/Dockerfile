@@ -54,20 +54,20 @@ RUN echo "Setting python and python3 system-wide to python3.12..." \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3.12 100 \
     && update-alternatives --set python /usr/bin/python3.12 \
     && echo "Installing ASKAP tools from local copies..." \
-    && python3 -m pip install --upgrade pip \
+    && python3 -m pip install --upgrade pip --break-system-packages \
     # Create install directory
     && mkdir -p ${INSTALL_DIR} \
     # Install python packages with Ubuntu 24.04 compatibility
     && echo "Installing python-askap..." \
-    && pip3 install ${BUILD_DIR}/python-askap \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap \
     && echo "Installing python-parset..." \
-    && pip3 install ${BUILD_DIR}/python-parset \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-parset \
     && echo "Installing python-askap-interfaces..." \
-    && pip3 install ${BUILD_DIR}/python-askap-interfaces \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap-interfaces \
     && echo "Installing python-iceutils..." \
-    && pip3 install ${BUILD_DIR}/python-iceutils \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-iceutils \
     && echo "Installing python-askap-cli..." \
-    && pip3 install ${BUILD_DIR}/python-askap-cli \
+    && pip3 install --break-system-packages ${BUILD_DIR}/python-askap-cli \
     # Copy ICE configuration from askap-dev
     && cp ${BUILD_DIR}/askap-dev/config/tos-ice.cfg ${INSTALL_DIR} \
     && echo "ASKAP tools installation completed successfully" \
