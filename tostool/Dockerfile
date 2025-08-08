@@ -36,7 +36,7 @@ ENV TOSTOOL_VERSION="${REPO_VERSION}"
 # Install TOSTOOL specific Python requirements
 
 COPY requirements.txt /tmp/requirements.txt
-RUN pip3 install --no-deps -r /tmp/requirements.txt
+RUN python3 -m pip install --upgrade-strategy only-if-needed -r /tmp/requirements.txt
 
 # Copy pre-cloned ASKAP repositories (cloned locally with user credentials)
 # These should be cloned by the build script before docker build

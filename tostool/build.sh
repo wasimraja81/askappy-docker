@@ -153,6 +153,7 @@ build_check_push() {
         touch "${SCRIPT_DIR}/build_log/import_test_formatted.txt"
         touch "${SCRIPT_DIR}/build_log/import_failures.txt"
         touch "${SCRIPT_DIR}/build_log/import_errors.log"
+        set +e  # Disable exit on error for the import test run
         docker run \
             --rm \
             --platform linux/amd64 \
@@ -165,6 +166,7 @@ build_check_push() {
             "${IMAGE_NAME}:${BASE_TAG}" \
             bash -c 'python3 /test_imports.py /import_directives.txt' \
             > import_test.log 2>&1
+        set -e  # Re-enable exit on error
         echo -e "\n\n================ Import Test Output Logs ================\n"
         echo -e "  Raw import test log:      $(pwd)/import_test.log"
         echo -e "  Formatted summary:        $(pwd)/tostool/build_log/import_test_formatted.txt"

@@ -6,10 +6,17 @@
 #dask
 #casa-formats-io
 #patsy
+
+# NUMPY:
+numpy<1.24
+setuptools<59
+
 # ASTROPY: 
 pyerfa
 astropy-iers-data
+yaml
 astropy
 
 # matplotlib
 cycler
+kiwisolver
