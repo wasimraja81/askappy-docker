@@ -6,14 +6,14 @@
 
 # Core scientific
 import numpy FATAL
-import numpy.typing WARNING
+import numpy.typing FATAL
 import pandas FATAL
 import matplotlib FATAL
-import matplotlib.dates WARNING
-import matplotlib.lines WARNING
-import matplotlib.patches WARNING
-import matplotlib.pyplot WARNING
-import pylab WARNING
+import matplotlib.dates FATAL
+import matplotlib.lines FATAL
+import matplotlib.patches FATAL
+import matplotlib.pyplot FATAL
+import pylab FATAL
 
 # Astropy and astronomy
 import astropy FATAL
@@ -33,21 +33,11 @@ import casacore.quanta FATAL
 import casacore.tables FATAL
 
 # Astroquery
-import astroquery.vizier WARNING
+import astroquery.vizier FATAL
 
-# ASKAP-specific
-import askap.logging FATAL
-import askap.parset FATAL
-
-# Project helpers
-import cubestatsHelpers FATAL
-import statsCollection FATAL
-import statsColour FATAL
-import statsEntry FATAL
-import thumbnailHelpers FATAL
-
+###################################################
 # Standard library
-import abc WARNING
+import abc FATAL
 import argparse FATAL
 import datetime FATAL
 import glob FATAL
@@ -59,8 +49,23 @@ import pkg_resources FATAL
 import re FATAL
 import sys FATAL
 
+#################################################
+# ASKAP-specific - to be built in this container
+# import askap.logging FATAL
+# import askap.parset FATAL
+
+# Pipeline helpers
+# import cubestatsHelpers WARNING
+# import statsCollection WARNING
+# import statsColour WARNING
+# import statsEntry WARNING
+# import thumbnailHelpers WARNING
+#################################################
+
+# Won't check for this one as it can take a long time, 
+# and also could be messy. 
 # MPI
-import mpi4py.MPI FATAL
+#import mpi4py.MPI FATAL - takes a long time!
 
 # --- The following lines were present in the original file but are now covered above or are not needed for module import testing. ---
 # from abc import ABC, abstractmethod  # Already covered by 'import abc'; specific class import not needed for module test

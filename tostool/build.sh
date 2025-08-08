@@ -97,8 +97,8 @@ setup_buildx() {
     log_success "Buildx setup complete"
 }
 
-# Function to build and push image
-build_and_push() {
+ # Function to build check and push image
+build_check_push() {
     local dockerfile="${1:-Dockerfile}"
 
     local full_tag="${IMAGE_NAME}:${BASE_TAG}"
@@ -119,19 +119,87 @@ build_and_push() {
         "--build-arg" "CPU_CORE_COUNT=$(nproc)"
     )
 
-    # Build and push
+    # Build locally (no push)
     docker buildx build \
         --platform "${PLATFORMS}" \
-        --push \
+        --load \
         --tag "${full_tag}" \
-        --tag "${latest_tag}" \
         --file "${dockerfile}" \
         "${build_args[@]}" \
         --progress=plain \
         .
+    if [[ $? -eq 0 ]]; then
+        log_success "Successfully built (no push): $full_tag"
+    else
+        log_error "Build failed for: $full_tag"
+        exit 1
+    fi
 
-    log_success "Successfully built and pushed: $full_tag"
-    log_success "Successfully built and pushed: $latest_tag"
+    # Sanity check: Ensure the image was built
+    if ! docker images "${IMAGE_NAME}" | grep -q "${BASE_TAG}"; then
+        log_error "Image ${IMAGE_NAME}:${BASE_TAG} was not built successfully"
+        exit 1
+    else
+        log_info "Image ${IMAGE_NAME}:${BASE_TAG} built successfully"
+        # Run import test inside the built container
+        log_info "Running import test inside the built image..."
+        log_info "Running build.sh from: $(pwd)"
+        log_info "DEBUG: IMAGE_NAME='${IMAGE_NAME}' BASE_TAG='${BASE_TAG}' full_tag='${IMAGE_NAME}:${BASE_TAG}'"
+        # Ensure build_log directory exists
+        mkdir -p "${SCRIPT_DIR}/build_log"
+        # Create log files: 
+        #    ensure the files exist on the host (even as empty files) 
+        #    so Docker mounts them as files, not directories.
+        touch "${SCRIPT_DIR}/build_log/import_test_formatted.txt"
+        touch "${SCRIPT_DIR}/build_log/import_failures.txt"
+        touch "${SCRIPT_DIR}/build_log/import_errors.log"
+        docker run \
+            --rm \
+            --platform linux/amd64 \
+            -v "${SCRIPT_DIR}/import_directives.txt:/import_directives.txt:ro" \
+            -v "${SCRIPT_DIR}/test_imports.py:/test_imports.py:ro" \
+            -v "${SCRIPT_DIR}/build_log/import_test_formatted.txt:/import_test_formatted.txt" \
+            -v "${SCRIPT_DIR}/build_log/import_failures.txt:/import_failures.txt" \
+            -v "${SCRIPT_DIR}/build_log/import_errors.log:/import_errors.log" \
+            -w / \
+            "${IMAGE_NAME}:${BASE_TAG}" \
+            bash -c 'python3 /test_imports.py /import_directives.txt' \
+            > import_test.log 2>&1
+        echo -e "\n\n================ Import Test Output Logs ================\n"
+        echo -e "  Raw import test log:      $(pwd)/import_test.log"
+        echo -e "  Formatted summary:        $(pwd)/tostool/build_log/import_test_formatted.txt"
+        echo -e "  Machine-readable failures:$(pwd)/tostool/build_log/import_failures.txt"
+        echo -e "  Detailed error log:       $(pwd)/tostool/build_log/import_errors.log"
+        echo -e "\n========================================================\n"
+        log_info "See the above paths for import test results."
+        # Parse import_failures.txt for FATAL failures
+        fatal_failed=0
+        if [[ -f "${SCRIPT_DIR}/build_log/import_failures.txt" ]]; then
+            while IFS=$'\t' read -r desc severity err; do
+                if [[ "$severity" == "FATAL" ]]; then
+                    fatal_failed=1
+                    break
+                fi
+            done < "${SCRIPT_DIR}/build_log/import_failures.txt"
+        fi
+        if [[ $fatal_failed -eq 0 ]]; then
+            log_success "All FATAL imports succeeded. Proceeding to push."
+        else
+            log_error "FATAL import failures detected. See import_test.log and import_test_formatted.txt for details. Aborting push."
+            cat import_test.log
+            exit 1
+        fi
+    fi
+
+    # Push the built image to the registry
+    log_info "Pushing image to registry: $full_tag"
+    docker push "$full_tag"
+    if [[ $? -eq 0 ]]; then
+        log_success "Successfully pushed: $full_tag"
+    else
+        log_error "Push failed for: $full_tag"
+        exit 1
+    fi
 }
 
 # Function to show image information
@@ -296,7 +364,7 @@ main() {
     # Record start time
     local start_time=$(date +%s)
 
-    build_and_push "$dockerfile"
+    build_check_push "$dockerfile"
 
     # Calculate build time
     local end_time=$(date +%s)
