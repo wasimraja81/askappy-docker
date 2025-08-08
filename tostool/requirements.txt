@@ -6,3 +6,10 @@
 #dask
 #casa-formats-io
 #patsy
+# ASTROPY: 
+pyerfa
+astropy-iers-data
+astropy
+
+# matplotlib
+cycler
