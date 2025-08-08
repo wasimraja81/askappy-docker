@@ -14,7 +14,7 @@ setuptools<59
 # ASTROPY: 
 pyerfa
 astropy-iers-data
-yaml
+pyyaml
 astropy
 
 # matplotlib
