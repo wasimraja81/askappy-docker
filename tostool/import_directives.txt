@@ -1,0 +1,123 @@
+# import_directives.txt
+# One import per line. Format:
+#   import module[.submodule] [FATAL|WARNING]  # optional comment
+#   from module import submodule [FATAL|WARNING]  # will be converted to import module.submodule
+# Default severity is FATAL if not specified.
+
+# Core scientific
+import numpy FATAL
+import numpy.typing WARNING
+import pandas FATAL
+import matplotlib FATAL
+import matplotlib.dates WARNING
+import matplotlib.lines WARNING
+import matplotlib.patches WARNING
+import matplotlib.pyplot WARNING
+import pylab WARNING
+
+# Astropy and astronomy
+import astropy FATAL
+import astropy.coordinates FATAL
+import astropy.io.ascii FATAL
+import astropy.io.fits FATAL
+import astropy.io.votable FATAL
+import astropy.time FATAL
+import astropy.units FATAL
+import astropy.visualization.wcsaxes FATAL
+import astropy.wcs FATAL
+
+# Casacore
+import casacore FATAL
+import casacore.images.image FATAL
+import casacore.quanta FATAL
+import casacore.tables FATAL
+
+# Astroquery
+import astroquery.vizier WARNING
+
+# ASKAP-specific
+import askap.logging FATAL
+import askap.parset FATAL
+
+# Project helpers
+import cubestatsHelpers FATAL
+import statsCollection FATAL
+import statsColour FATAL
+import statsEntry FATAL
+import thumbnailHelpers FATAL
+
+# Standard library
+import abc WARNING
+import argparse FATAL
+import datetime FATAL
+import glob FATAL
+import logging FATAL
+import optparse FATAL
+import os FATAL
+import pathlib FATAL
+import pkg_resources FATAL
+import re FATAL
+import sys FATAL
+
+# MPI
+import mpi4py.MPI FATAL
+
+# --- The following lines were present in the original file but are now covered above or are not needed for module import testing. ---
+# from abc import ABC, abstractmethod  # Already covered by 'import abc'; specific class import not needed for module test
+# from argparse import ArgumentParser  # Already covered by 'import argparse'
+# from astropy.coordinates import EarthLocation  # Already covered by 'import astropy.coordinates'
+# from astropy.coordinates import SkyCoord  # Already covered by 'import astropy.coordinates'
+# from astropy.coordinates import SpectralCoord  # Already covered by 'import astropy.coordinates'
+# from astropy import units as u  # Already covered by 'import astropy.units'
+# from astropy.io import fits  # Already covered by 'import astropy.io.fits'
+# from astropy.io import votable  # Already covered by 'import astropy.io.votable'
+# from astropy.time import Time  # Already covered by 'import astropy.time'
+# from astropy.visualization.wcsaxes import WCSAxes  # Already covered by 'import astropy.visualization.wcsaxes'
+# from astropy.wcs import WCS  # Already covered by 'import astropy.wcs'
+# from astroquery.vizier import conf  # Already covered by 'import astroquery.vizier'
+# from astroquery.vizier import Vizier  # Already covered by 'import astroquery.vizier'
+# from casacore.quanta import quantity  # Already covered by 'import casacore.quanta'
+# from casacore.tables import *  # Already covered by 'import casacore.tables'
+# from casacore.tables import table  # Already covered by 'import casacore.tables'
+# from datetime import datetime  # Already covered by 'import datetime'
+# from datetime import datetime, timedelta  # Already covered by 'import datetime'
+# from datetime import datetime, timedelta, timezone  # Already covered by 'import datetime'
+# from matplotlib.patches import Ellipse  # Already covered by 'import matplotlib.patches'
+# from matplotlib.ticker import AutoMinorLocator,AutoLocator  # Already covered by 'import matplotlib.ticker' if needed
+# from matplotlib.ticker import MultipleLocator  # Already covered by 'import matplotlib.ticker' if needed
+# from mpi4py import MPI  # Already covered by 'import mpi4py.MPI'
+# from optparse import OptionParser  # Already covered by 'import optparse'
+# from pathlib import Path  # Already covered by 'import pathlib'
+# from pkg_resources import require  # Already covered by 'import pkg_resources'
+# from pylab import *  # Already covered by 'import pylab'
+# from scipy.ndimage import gaussian_filter  # Could add 'import scipy.ndimage' if needed
+# from thumbnailHelpers import *  # Already covered by 'import thumbnailHelpers'
+# from typing import Optional, Tuple  # Already covered by 'import typing' if needed
+# import askap.logging as logging  # Already covered by 'import askap.logging'
+# import askap.parset as parset  # Already covered by 'import askap.parset'
+# import astropy  # Already covered by 'import astropy'
+# import astropy.coordinates as coord  # Already covered by 'import astropy.coordinates'
+# import astropy.io.ascii as ascii  # Already covered by 'import astropy.io.ascii'
+# import astropy.io.fits as fits  # Already covered by 'import astropy.io.fits'
+# import astropy.units as u  # Already covered by 'import astropy.units'
+# import casacore.images.image as im  # Already covered by 'import casacore.images.image'
+# import cubestatsHelpers as cs  # Already covered by 'import cubestatsHelpers'
+# import datetime  # Already covered by 'import datetime'
+# import glob  # Already covered by 'import glob'
+# import logging  # Already covered by 'import logging'
+# import matplotlib  # Already covered by 'import matplotlib'
+# import matplotlib.dates as mdates  # Already covered by 'import matplotlib.dates'
+# import matplotlib.lines as mlines  # Already covered by 'import matplotlib.lines'
+# import matplotlib.patches as mpatches  # Already covered by 'import matplotlib.patches'
+# import matplotlib.pyplot as plt  # Already covered by 'import matplotlib.pyplot'
+# import numpy as np  # Already covered by 'import numpy'
+# import numpy.typing as npt  # Already covered by 'import numpy.typing'
+# import os  # Already covered by 'import os'
+# import pandas as pd  # Already covered by 'import pandas'
+# import pylab as plt  # Already covered by 'import pylab'
+# import re  # Already covered by 'import re'
+# import statsCollection as sc  # Already covered by 'import statsCollection'
+# import statsColour as sc  # Already covered by 'import statsColour'
+# import statsColour as scol  # Already covered by 'import statsColour'
+# import statsEntry as se  # Already covered by 'import statsEntry'
+# import sys  # Already covered by 'import sys'
