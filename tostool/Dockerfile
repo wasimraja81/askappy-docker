@@ -54,7 +54,6 @@ RUN echo "Setting python and python3 system-wide to python3.12..." \
     && update-alternatives --install /usr/bin/python python /usr/bin/python3.12 100 \
     && update-alternatives --set python /usr/bin/python3.12 \
     && echo "Installing ASKAP tools from local copies..." \
-    && python3 -m pip install --upgrade pip --break-system-packages \
     # Create install directory
     && mkdir -p ${INSTALL_DIR} \
     # Install python packages with Ubuntu 24.04 compatibility
