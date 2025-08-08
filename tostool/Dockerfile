@@ -47,6 +47,7 @@ COPY askap-tos/python-askap-cli ${BUILD_DIR}/python-askap-cli
 
 # Build and install ASKAP tools
 RUN echo "Installing ASKAP tools from local copies..." \
+    && python3 -m pip install --upgrade pip \
     # Create install directory
     && mkdir -p ${INSTALL_DIR} \
     # Install python packages with Ubuntu 24.04 compatibility
