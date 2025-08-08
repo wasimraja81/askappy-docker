@@ -69,12 +69,15 @@ check_prerequisites() {
         exit 1
     fi
     
-    # Check if we're in the right directory
-    if [[ ! -f "Dockerfile" ]] && [[ ! -f "Dockerfile.improved" ]]; then
-        log_error "No Dockerfile found in current directory"
+    # Check if Dockerfile exists in script directory (or as specified)
+    local dockerfile_path="$1"
+    if [[ "$dockerfile_path" != /* ]]; then
+        dockerfile_path="${SCRIPT_DIR}/$dockerfile_path"
+    fi
+    if [[ ! -f "$dockerfile_path" ]]; then
+        log_error "Dockerfile not found: $dockerfile_path"
         exit 1
     fi
-    
     # Check if required files exist
     log_success "All prerequisites met"
 }
@@ -97,20 +100,26 @@ setup_buildx() {
     log_success "Buildx setup complete"
 }
 
- # Function to build check and push image
+# Function to build, check, and optionally push image
 build_check_push() {
     local dockerfile="${1:-Dockerfile}"
+    # Ensure dockerfile is an absolute path, just like in check_prerequisites
+    if [[ "$dockerfile" != /* ]]; then
+        dockerfile="${SCRIPT_DIR}/$dockerfile"
+    fi
+    local check_builds="${2:-false}"
+    local test_platform="${3:-linux/amd64}"
+    local skip_test="${4:-false}"
+    local skip_cleanup="${5:-false}"
 
     local full_tag="${IMAGE_NAME}:${BASE_TAG}"
     local latest_tag="${IMAGE_NAME}:${LATEST_TAG}"
 
-    log_info "Building and pushing: $full_tag"
+    log_info "Building image: $full_tag"
     log_info "Dockerfile: $dockerfile"
-    log_info "Platforms: $PLATFORMS"
     log_info "Build date: $BUILD_DATE"
     log_info "VCS ref: $VCS_REF"
 
-    # Build arguments
     local build_args=(
         "--build-arg" "BUILD_DATE=${BUILD_DATE}"
         "--build-arg" "VCS_REF=${VCS_REF}"
@@ -119,98 +128,120 @@ build_check_push() {
         "--build-arg" "CPU_CORE_COUNT=$(nproc)"
     )
 
-    # Build locally (no push)
-    docker buildx build \
-        --platform "${PLATFORMS}" \
-        --load \
-        --tag "${full_tag}" \
-        --file "${dockerfile}" \
-        "${build_args[@]}" \
-        --progress=plain \
-        .
+    if [[ "$check_builds" == true ]]; then
+        log_info "[--check-builds] Only building and testing for platform: $test_platform (no push)"
+        docker buildx build \
+            --platform "$test_platform" \
+            --load \
+            --tag "$full_tag" \
+            --file "$dockerfile" \
+            "${build_args[@]}" \
+            --progress=plain \
+            .
+    else
+        log_info "Building for platforms: $PLATFORMS (multiarch, will push if successful)"
+        docker buildx build \
+            --platform "$PLATFORMS" \
+            --push \
+            --tag "$full_tag" \
+            --file "$dockerfile" \
+            "${build_args[@]}" \
+            --progress=plain \
+            .
+    fi
+
     if [[ $? -eq 0 ]]; then
-        log_success "Successfully built (no push): $full_tag"
+        log_success "Successfully built: $full_tag"
     else
         log_error "Build failed for: $full_tag"
         exit 1
     fi
 
-    # Sanity check: Ensure the image was built
-    if ! docker images "${IMAGE_NAME}" | grep -q "${BASE_TAG}"; then
-        log_error "Image ${IMAGE_NAME}:${BASE_TAG} was not built successfully"
-        exit 1
-    else
-        log_info "Image ${IMAGE_NAME}:${BASE_TAG} built successfully"
-        # Run import test inside the built container
-        log_info "Running import test inside the built image..."
-        log_info "Running build.sh from: $(pwd)"
-        log_info "DEBUG: IMAGE_NAME='${IMAGE_NAME}' BASE_TAG='${BASE_TAG}' full_tag='${IMAGE_NAME}:${BASE_TAG}'"
-        # Ensure build_log directory exists
-        mkdir -p "${SCRIPT_DIR}/build_log"
-        # Create log files: 
-        #    ensure the files exist on the host (even as empty files) 
-        #    so Docker mounts them as files, not directories.
-        touch "${SCRIPT_DIR}/build_log/import_test_formatted.txt"
-        touch "${SCRIPT_DIR}/build_log/import_failures.txt"
-        touch "${SCRIPT_DIR}/build_log/import_errors.log"
-        set +e  # Disable exit on error for the import test run
-        docker run \
-            --rm \
-            --platform linux/amd64 \
-            -v "${SCRIPT_DIR}/import_directives.txt:/import_directives.txt:ro" \
-            -v "${SCRIPT_DIR}/test_imports.py:/test_imports.py:ro" \
-            -v "${SCRIPT_DIR}/build_log/import_test_formatted.txt:/import_test_formatted.txt" \
-            -v "${SCRIPT_DIR}/build_log/import_failures.txt:/import_failures.txt" \
-            -v "${SCRIPT_DIR}/build_log/import_errors.log:/import_errors.log" \
-            -w / \
-            "${IMAGE_NAME}:${BASE_TAG}" \
-            bash -c 'python3 /test_imports.py /import_directives.txt' \
-            > import_test.log 2>&1
-        set -e  # Re-enable exit on error
-        echo -e "\n\n================ Import Test Output Logs ================\n"
-        echo -e "  Raw import test log:      $(pwd)/import_test.log"
-        echo -e "  Formatted summary:        $(pwd)/tostool/build_log/import_test_formatted.txt"
-        echo -e "  Machine-readable failures:$(pwd)/tostool/build_log/import_failures.txt"
-        echo -e "  Detailed error log:       $(pwd)/tostool/build_log/import_errors.log"
-        echo -e "\n========================================================\n"
-        log_info "See the above paths for import test results."
-        # Parse import_failures.txt for FATAL failures
-        fatal_failed=0
-        if [[ -f "${SCRIPT_DIR}/build_log/import_failures.txt" ]]; then
-            while IFS=$'\t' read -r desc severity err; do
-                if [[ "$severity" == "FATAL" ]]; then
-                    fatal_failed=1
-                    break
-                fi
-            done < "${SCRIPT_DIR}/build_log/import_failures.txt"
-        fi
-        if [[ $fatal_failed -eq 0 ]]; then
-            log_success "All FATAL imports succeeded. Proceeding to push."
-        else
-            log_error "FATAL import failures detected. See import_test.log and import_test_formatted.txt for details. Aborting push."
-            cat import_test.log
-            echo -e "\n\n================ Import Test Output Logs ================\n"
-            echo -e "  Raw import test log:      $(pwd)/import_test.log"
-            echo -e "  Formatted summary:        $(pwd)/tostool/build_log/import_test_formatted.txt"
-            echo -e "  Machine-readable failures:$(pwd)/tostool/build_log/import_failures.txt"
-            echo -e "  Detailed error log:       $(pwd)/tostool/build_log/import_errors.log"
-            echo -e "\n========================================================\n"
-            echo -e "\n[HINT] To fix missing dependencies:"
-            echo -e "  1. Check the error message above for the missing module (e.g., 'No module named ...')."
-            echo -e "  2. Update the appropriate requirements.txt file (e.g., tostool/requirements.txt) to include the missing package."
-            echo -e "  3. Rebuild the image."
-            exit 0
+    # For --check-builds, ensure the image is loaded locally for test
+    if [[ "$check_builds" == true ]]; then
+        if ! docker images "${IMAGE_NAME}" | grep -q "${BASE_TAG}"; then
+            log_error "Image ${IMAGE_NAME}:${BASE_TAG} was not built successfully"
+            exit 1
         fi
     fi
 
-    # Push the built image to the registry
-    log_info "Pushing image to registry: $full_tag"
-    docker push "$full_tag"
-    if [[ $? -eq 0 ]]; then
-        log_success "Successfully pushed: $full_tag"
+    log_info "Image ${IMAGE_NAME}:${BASE_TAG} built successfully"
+    log_info "Running import test inside the built image..."
+    mkdir -p "${SCRIPT_DIR}/build_log"
+    touch "${SCRIPT_DIR}/build_log/import_test_formatted.txt"
+    touch "${SCRIPT_DIR}/build_log/import_failures.txt"
+    touch "${SCRIPT_DIR}/build_log/import_errors.log"
+    set +e
+    docker run \
+        --rm \
+        --platform "$test_platform" \
+        -v "${SCRIPT_DIR}/import_directives.txt:/import_directives.txt:ro" \
+        -v "${SCRIPT_DIR}/test_imports.py:/test_imports.py:ro" \
+        -v "${SCRIPT_DIR}/build_log/import_test_formatted.txt:/import_test_formatted.txt" \
+        -v "${SCRIPT_DIR}/build_log/import_failures.txt:/import_failures.txt" \
+        -v "${SCRIPT_DIR}/build_log/import_errors.log:/import_errors.log" \
+        -w / \
+        "$full_tag" \
+        bash -c 'python3 /test_imports.py /import_directives.txt' \
+        > "${SCRIPT_DIR}/import_test.log" 2>&1
+    set -e
+    echo -e "\n\n================ Import Test Output Logs ================\n"
+    echo -e "  Raw import test log:      ${SCRIPT_DIR}/import_test.log"
+    echo -e "  Formatted summary:        ${SCRIPT_DIR}/build_log/import_test_formatted.txt"
+    echo -e "  Machine-readable failures:${SCRIPT_DIR}/build_log/import_failures.txt"
+    echo -e "  Detailed error log:       ${SCRIPT_DIR}/build_log/import_errors.log"
+    echo -e "\n========================================================\n"
+    log_info "See the above paths for import test results."
+    fatal_failed=0
+    if [[ -f "${SCRIPT_DIR}/build_log/import_failures.txt" ]]; then
+        while IFS=$'\t' read -r desc severity err; do
+            if [[ "$severity" == "FATAL" ]]; then
+                fatal_failed=1
+                break
+            fi
+        done < "${SCRIPT_DIR}/build_log/import_failures.txt"
+    fi
+    if [[ $fatal_failed -eq 0 ]]; then
+        log_success "All FATAL imports succeeded."
     else
-        log_error "Push failed for: $full_tag"
-        exit 1
+        log_error "FATAL import failures detected. See import_test.log and import_test_formatted.txt for details."
+        cat import_test.log
+        echo -e "\n\n================ Import Test Output Logs ================\n"
+        echo -e "  Raw import test log:      ${SCRIPT_DIR}/import_test.log"
+        echo -e "  Formatted summary:        ${SCRIPT_DIR}/build_log/import_test_formatted.txt"
+        echo -e "  Machine-readable failures:${SCRIPT_DIR}/build_log/import_failures.txt"
+        echo -e "  Detailed error log:       ${SCRIPT_DIR}/build_log/import_errors.log"
+        echo -e "\n========================================================\n"
+        echo -e "\n[HINT] To fix missing dependencies:"
+        echo -e "  1. Check the error message above for the missing module (e.g., 'No module named ...')."
+        echo -e "  2. Update the appropriate requirements.txt file (e.g., tostool/requirements.txt) to include the missing package."
+        echo -e "  3. Rebuild the image."
+        exit 0
+    fi
+
+    # Show image information
+    show_image_info "$full_tag"
+    # Test the image unless skipped
+    if [[ "$skip_test" != true ]]; then
+        test_image "$full_tag"
+    fi
+    # Cleanup unless skipped
+    if [[ "$skip_cleanup" != true ]]; then
+        cleanup
+    fi
+
+    # Only push if not --check-builds
+    if [[ "$check_builds" != true ]]; then
+        log_info "Pushing image to registry: $full_tag"
+        docker push "$full_tag"
+        if [[ $? -eq 0 ]]; then
+            log_success "Successfully pushed: $full_tag"
+        else
+            log_error "Push failed for: $full_tag"
+            exit 1
+        fi
+    else
+        log_info "[--check-builds] Skipping push as requested."
     fi
 }
 
@@ -331,6 +362,8 @@ main() {
     local dockerfile="Dockerfile"
     local skip_test=false
     local skip_cleanup=false
+    local check_builds=false
+    local test_platform="linux/amd64"
 
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -347,12 +380,22 @@ main() {
                 skip_cleanup=true
                 shift
                 ;;
+            --check-builds)
+                check_builds=true
+                shift
+                ;;
+            --test-platform)
+                test_platform="$2"
+                shift 2
+                ;;
             --help|-h)
                 echo "Usage: $0 [OPTIONS]"
                 echo "Options:"
                 echo "  --dockerfile FILE    Use specific Dockerfile (default: Dockerfile)"
                 echo "  --skip-test         Skip image testing"
                 echo "  --skip-cleanup      Skip cleanup"
+                echo "  --check-builds      Only build and test for a single platform, do not push"
+                echo "  --test-platform PLAT  Platform for local test (default: linux/amd64)"
                 echo "  --help, -h          Show this help"
                 exit 0
                 ;;
@@ -370,33 +413,15 @@ main() {
     log_info "Using dockerfile: $dockerfile"
 
     # Execute build steps
-    check_prerequisites
+    check_prerequisites "$dockerfile"
     setup_buildx
 
     # Record start time
     local start_time=$(date +%s)
 
-    build_check_push "$dockerfile"
+    build_check_push "$dockerfile" "$check_builds" "$test_platform" "$skip_test" "$skip_cleanup"
 
-    # Calculate build time
-    local end_time=$(date +%s)
-    local build_time=$((end_time - start_time))
-    log_info "Build completed in ${build_time} seconds"
-
-    # Show image information
-    show_image_info "${IMAGE_NAME}:${BASE_TAG}"
-
-    # Test the image unless skipped
-    if [[ "$skip_test" != true ]]; then
-        test_image "${IMAGE_NAME}:${BASE_TAG}"
-    fi
-
-    # Cleanup unless skipped
-    if [[ "$skip_cleanup" != true ]]; then
-        cleanup
-    fi
-
-    # Clean up cloned repositories for security
+    # Clean up cloned repositories for security (should be handled in build_check_push, but keep for safety)
     log_info "Cleaning up cloned repositories..."
     rm -rf "askap-tos"
 

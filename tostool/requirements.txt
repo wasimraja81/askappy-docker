@@ -18,6 +18,10 @@ pyyaml
 requests
 astropy
 
+# VO/Archives:
+astroquery
+jaraco.collections
+
 # matplotlib
 cycler
 kiwisolver
