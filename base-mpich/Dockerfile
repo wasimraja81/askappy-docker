@@ -48,10 +48,10 @@ RUN apt-get update -qq \
         libffi-dev \
         libncurses-dev \
         libreadline-dev \
-        # MPI and parallel computing
-        libhwloc-dev \
-        libibverbs-dev \
-        libopenmpi-dev \
+        ## MPI and parallel computing
+        #libhwloc-dev \
+        #libibverbs-dev \
+        #libopenmpi-dev \
         # Python development
         python3-dev \
         python3-pip \

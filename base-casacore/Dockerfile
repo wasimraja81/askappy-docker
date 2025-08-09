@@ -5,7 +5,7 @@
 # This image is used as a base for askappy-base and other stacks
 #####################################################################
 
-ARG BASE_MPICH_VERSION=mpich-4.3.1-20250807-53a3b2a
+ARG BASE_MPICH_VERSION=base-mpich-latest
 ARG TARGETPLATFORM=linux/amd64
 FROM --platform=${TARGETPLATFORM} wasimraja81/base-mpich:${BASE_MPICH_VERSION} as mpich-base
 
