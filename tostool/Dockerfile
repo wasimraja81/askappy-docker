@@ -4,7 +4,7 @@
 # TOSTOOL Docker Image - Ubuntu 24.04 with ASKAP TOS Tools
 # Built on askappy-base with casacore and scientific computing stack
 #####################################################################
-ARG BASE_CASACORE_VERSION=casacore-3.7.1-20250808-abd50aa
+ARG BASE_CASACORE_VERSION=casacore-3.7.1-20250810-bd3314f
 ARG TARGETPLATFORM=linux/amd64
 FROM --platform=${TARGETPLATFORM} wasimraja81/base-casacore:${BASE_CASACORE_VERSION} as casacore-base
 
@@ -99,6 +99,6 @@ RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 
 # Health check to verify ASKAP tools are properly installed
 HEALTHCHECK --interval=30s --timeout=10s --start-period=5s --retries=3 \
-    CMD python3 -c "import askap; import casacore; print('TOSTOOL OK')" || exit 1
+    CMD python3 -c "import askap; import casacore; import mpi4py; print('TOSTOOL OK')" || exit 1
 
 CMD ["/bin/bash"]
