@@ -82,7 +82,7 @@ RUN apt-get update -qq \
         libfuse2 \
         software-properties-common \
         gfortran \
-        libcurl-dev \
+        libcurl4-openssl-dev \
         libnghttp2-dev \
         libcurl4 \
         libnghttp2-14 \
