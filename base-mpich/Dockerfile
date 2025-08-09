@@ -80,6 +80,12 @@ RUN apt-get update -qq \
         # Archive tools
         fuse \
         libfuse2 \
+        software-properties-common \
+        gfortran \
+        libcurl-dev \
+        libnghttp2-dev \
+        libcurl4 \
+        libnghttp2-14 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
@@ -92,7 +98,6 @@ RUN mkdir -p ${INSTALL_DIR} ${BUILD_DIR}
 
 # Install python3.10 and pip3
 RUN apt-get update && \
-    apt-get install -y software-properties-common gfortran && \
     add-apt-repository -y ppa:deadsnakes/ppa && \
     apt-get update && \
     apt-get install -y python3.10-dev python3.10 python3.10-distutils python3-pip
