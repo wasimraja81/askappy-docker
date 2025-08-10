@@ -230,16 +230,9 @@ build_check_push() {
         cleanup
     fi
 
-    # Only push if not --check-builds
+    # Only push if not --check-builds (buildx --push already handled the push)
     if [[ "$check_builds" != true ]]; then
-        log_info "Pushing image to registry: $full_tag"
-        docker push "$full_tag"
-        if [[ $? -eq 0 ]]; then
-            log_success "Successfully pushed: $full_tag"
-        else
-            log_error "Push failed for: $full_tag"
-            exit 1
-        fi
+        log_success "Image successfully built and pushed via buildx: $full_tag"
     else
         log_info "[--check-builds] Skipping push as requested."
     fi
