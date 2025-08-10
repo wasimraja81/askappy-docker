@@ -83,13 +83,19 @@ RUN apt-get update -qq \
         software-properties-common \
         gfortran \
         libcurl4-openssl-dev \
-        libnghttp2-dev \
         libcurl4 \
+        libnghttp2-dev \
         libnghttp2-14 \
     && apt-get clean \
     && rm -rf /var/lib/apt/lists/* \
     && rm -rf /tmp/* \
-    && rm -rf /var/tmp/*
+    && rm -rf /var/tmp/* \
+    # Ensure only OpenSSL variant of libcurl is present
+    && apt-get update -qq \
+    && apt-get remove -y libcurl4-gnutls-dev libcurl3-gnutls || true \
+    && apt-get autoremove -y \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
 
 # Build directories
 ARG BUILD_DIR=/_build
