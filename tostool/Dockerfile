@@ -4,7 +4,7 @@
 # TOSTOOL Docker Image - Ubuntu 24.04 with ASKAP TOS Tools
 # Built on askappy-base with casacore and scientific computing stack
 #####################################################################
-ARG BASE_CASACORE_VERSION=casacore-3.7.1-20250810-bd3314f
+ARG BASE_CASACORE_VERSION=casacore-3.7.1-20250810-607f488
 ARG TARGETPLATFORM=linux/amd64
 FROM --platform=${TARGETPLATFORM} wasimraja81/base-casacore:${BASE_CASACORE_VERSION} as casacore-base
 

@@ -31,5 +31,8 @@ Thumbs.db
 
 # Embedded git repositories (submodules should be properly added)
 
+# Test documentation (temporary)
+TEST_SUMMARY.md
+
 # Temporarily exclude tostool until ready
 #tostool/

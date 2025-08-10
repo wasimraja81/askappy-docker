@@ -30,16 +30,16 @@ projects:
     dockerfile: "Dockerfile"
     context: "./tostool"
     platforms: "linux/amd64,linux/arm64"
-    enabled: false  # Set to true when ready to build
+    enabled: false 
     labels:
       org.opencontainers.image.title: "tostool"
       org.opencontainers.image.description: "ASKAP TOS tools built on Ubuntu 24.04 with casacore"
       org.opencontainers.image.vendor: "CSIRO"
       repo.name: "tostool"
       repo.version: "2.28.0"
-      casacore.version: "v3.6.1"
+      casacore.version: "v3.7.1"
       mpich.version: "4.3.1"
-      base.image: "wasimraja81/askappy-ubuntu-24.04:base-mpich-casacore-3.7.1"
+      base.image: "wasimraja81/base-casacore:casacore-3.7.1-20250810-607f488"
 
   base-mpich:
     name: "base-mpich"
