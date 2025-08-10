@@ -137,6 +137,7 @@ build_check_push() {
             --file "$dockerfile" \
             "${build_args[@]}" \
             --progress=plain \
+            --no-cache \
             .
     else
         log_info "Building for platforms: $PLATFORMS (multiarch, will push if successful)"
@@ -147,6 +148,7 @@ build_check_push() {
             --file "$dockerfile" \
             "${build_args[@]}" \
             --progress=plain \
+            --no-cache \
             .
     fi
 
