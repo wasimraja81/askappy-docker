@@ -35,11 +35,15 @@ ENV TOSTOOL_VERSION="${REPO_VERSION}"
 
 # Install TOSTOOL specific Python requirements
 
+# Install typing_extensions for Python 3.10 compatibility before ASKAP tools
+RUN python3 -m pip install typing_extensions>=4.0
+
 COPY requirements.txt /tmp/requirements.txt
 RUN python3 -m pip install --upgrade-strategy only-if-needed -r /tmp/requirements.txt
 
 # Copy pre-cloned ASKAP repositories (cloned locally with user credentials)
 # These should be cloned by the build script before docker build
+# Note: Patches are applied by build.sh before docker build
 COPY askap-tos/askap-dev ${BUILD_DIR}/askap-dev
 COPY askap-tos/python-askap ${BUILD_DIR}/python-askap
 COPY askap-tos/python-parset ${BUILD_DIR}/python-parset
@@ -51,21 +55,21 @@ COPY askap-tos/python-askap-cli ${BUILD_DIR}/python-askap-cli
 
 # Build and install ASKAP tools
 RUN echo "Installing ASKAP tools from local copies..." \
-    # Upgrade pip3.12 to latest to support --break-system-packages and avoid license errors
-    && python3.12 -m pip install --ignore-installed pip --break-system-packages \
+    # Upgrade pip to latest to support modern pyproject.toml license format
+    && python3 -m pip install --upgrade pip \
     # Create install directory
     && mkdir -p ${INSTALL_DIR} \
-    # Install python packages with Ubuntu 24.04 compatibility using Python 3.12
+    # Install python packages with Ubuntu 24.04 compatibility using Python 3.10
     && echo "Installing python-askap..." \
-    && pip3.12 install --break-system-packages ${BUILD_DIR}/python-askap \
+    && pip3 install ${BUILD_DIR}/python-askap \
     && echo "Installing python-parset..." \
-    && pip3.12 install --break-system-packages ${BUILD_DIR}/python-parset \
+    && pip3 install ${BUILD_DIR}/python-parset \
     && echo "Installing python-askap-interfaces..." \
-    && pip3.12 install --break-system-packages ${BUILD_DIR}/python-askap-interfaces \
+    && pip3 install ${BUILD_DIR}/python-askap-interfaces \
     && echo "Installing python-iceutils..." \
-    && pip3.12 install --break-system-packages ${BUILD_DIR}/python-iceutils \
+    && pip3 install ${BUILD_DIR}/python-iceutils \
     && echo "Installing python-askap-cli..." \
-    && pip3.12 install --break-system-packages ${BUILD_DIR}/python-askap-cli \
+    && pip3 install ${BUILD_DIR}/python-askap-cli \
     # Copy ICE configuration from askap-dev
     && cp ${BUILD_DIR}/askap-dev/config/tos-ice.cfg ${INSTALL_DIR} \
     && echo "ASKAP tools installation completed successfully" \

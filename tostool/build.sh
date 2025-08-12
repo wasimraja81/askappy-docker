@@ -352,6 +352,40 @@ clone_all_repos() {
     log_success "All repositories cloned successfully!"
 }
 
+# Function to apply patches to cloned repositories
+apply_patches() {
+    local TMP_REPO_DIR="askap-tos"
+    local PATCHES_DIR="${SCRIPT_DIR}/patches"
+    
+    log_info "Applying patches to cloned repositories..."
+    
+    # Check if patches directory exists
+    if [[ ! -d "${PATCHES_DIR}" ]]; then
+        log_info "No patches directory found at ${PATCHES_DIR}, skipping patch application"
+        return 0
+    fi
+    
+    # Apply Python 3.10 compatibility patch to python-iceutils
+    local iceutils_patch="${PATCHES_DIR}/python-iceutils-python310-compat.patch"
+    if [[ -f "${iceutils_patch}" ]]; then
+        log_info "Applying Python 3.10 compatibility patch to python-iceutils..."
+        cd "${TMP_REPO_DIR}/python-iceutils"
+        
+        if patch -p1 < "${iceutils_patch}"; then
+            log_success "Successfully applied python-iceutils Python 3.10 compatibility patch"
+        else
+            log_error "Failed to apply python-iceutils Python 3.10 compatibility patch"
+            return 1
+        fi
+        
+        cd - > /dev/null
+    else
+        log_warn "Python 3.10 compatibility patch not found: ${iceutils_patch}"
+    fi
+    
+    log_success "All patches applied successfully!"
+}
+
 # Main execution
 main() {
     local dockerfile="Dockerfile"
@@ -359,6 +393,7 @@ main() {
     local skip_cleanup=false
     local check_builds=false
     local test_platform="linux/amd64"
+    local apply_patches=false
 
     # Parse command line arguments
     while [[ $# -gt 0 ]]; do
@@ -383,6 +418,10 @@ main() {
                 test_platform="$2"
                 shift 2
                 ;;
+            --apply-patches)
+                apply_patches=true
+                shift
+                ;;
             --help|-h)
                 echo "Usage: $0 [OPTIONS]"
                 echo "Options:"
@@ -391,6 +430,7 @@ main() {
                 echo "  --skip-cleanup      Skip cleanup"
                 echo "  --check-builds      Only build and test for a single platform, do not push"
                 echo "  --test-platform PLAT  Platform for local test (default: linux/amd64)"
+                echo "  --apply-patches     Apply compatibility patches to cloned repositories"
                 echo "  --help, -h          Show this help"
                 exit 0
                 ;;
@@ -403,6 +443,13 @@ main() {
 
     # Clone all required repos before building
     clone_all_repos
+
+    # Apply patches to cloned repositories if requested
+    if [[ "$apply_patches" == true ]]; then
+        apply_patches
+    else
+        log_info "Skipping patch application (use --apply-patches to enable)"
+    fi
 
     log_info "Starting Docker build process..."
     log_info "Using dockerfile: $dockerfile"
