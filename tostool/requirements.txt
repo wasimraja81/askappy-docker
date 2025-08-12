@@ -26,3 +26,4 @@ jaraco.collections
 cycler
 kiwisolver
 contourpy
+fonttools>=4.22.0
