@@ -25,4 +25,4 @@ jaraco.collections
 # matplotlib
 cycler
 kiwisolver
-countourpy
+contourpy
