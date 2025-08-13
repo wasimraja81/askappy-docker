@@ -36,3 +36,8 @@ TEST_SUMMARY.md
 
 # Temporarily exclude tostool until ready
 #tostool/
+prod_test
+tostool/build_log/
+tostool/tmp/
+archive/
+tostool/*.log
