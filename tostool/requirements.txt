@@ -27,5 +27,8 @@ cycler
 kiwisolver
 contourpy
 fonttools>=4.22.0
-# Required for dask (imported by reproject)
+# FLASH
 toolz
+cloudpickle
+astropy_healpix
+spectral_cube
