@@ -33,6 +33,9 @@ ENV TZ=Etc/UTC
 # You may want to define the repo version as an environment variable
 ENV TOSTOOL_VERSION="${REPO_VERSION}"
 
+# Install less pager utility
+RUN apt-get update && apt-get install -y less && rm -rf /var/lib/apt/lists/*
+
 # Install TOSTOOL specific Python requirements
 
 # Install typing_extensions for Python 3.10 compatibility before ASKAP tools

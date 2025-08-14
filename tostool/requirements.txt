@@ -27,3 +27,5 @@ cycler
 kiwisolver
 contourpy
 fonttools>=4.22.0
+# Required for dask (imported by reproject)
+tlz
