@@ -1,0 +1,9 @@
+--- a/src/askap/iceutils/icesession.py
++++ b/src/askap/iceutils/icesession.py
+@@ -34,7 +34,7 @@ import threading
+ import time
+ from types import FrameType, TracebackType
+-from typing import Self
++from typing_extensions import Self
+ 
+ import Ice

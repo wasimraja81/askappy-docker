@@ -21,6 +21,26 @@ projects:
       casacore.version: "v3.7.1"
       mpich.version: "4.3.1"
 
+  aces-apps:
+    name: "aces-apps"
+    description: "Tools for ACES - Ubuntu 24.04"
+    registry: "docker.io"
+    image_name: "wasimraja81/aces-apps-ubuntu-24.04"
+    base_tag: "1.5.9"
+    dockerfile: "Dockerfile"
+    context: "./aces-apps"
+    platforms: "linux/amd64,linux/arm64"
+    enabled: false 
+    labels:
+      org.opencontainers.image.title: "aces-apps"
+      org.opencontainers.image.description: "ACES tools built on Ubuntu 24.04 with casacore"
+      org.opencontainers.image.vendor: "CSIRO"
+      repo.name: "aces-apps"
+      repo.version: "1.5.9"
+      casacore.version: "v3.7.1"
+      mpich.version: "4.3.1"
+      base.image: "wasimraja81/base-casacore:casacore-3.7.1-20250810-607f488"
+
   tostool:
     name: "tostool"
     description: "Tools for ASKAP TOS (Telescope Operating System) - Ubuntu 24.04"

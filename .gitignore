@@ -41,3 +41,7 @@ tostool/build_log/
 tostool/tmp/
 archive/
 tostool/*.log
+aces-apps/askap-tos-and-aces
+aces-apps/build_log
+aces-apps/import_directives.txt
+aces-apps/*.log
