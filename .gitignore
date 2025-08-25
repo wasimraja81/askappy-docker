@@ -45,3 +45,8 @@ aces-apps/askap-tos-and-aces
 aces-apps/build_log
 aces-apps/import_directives.txt
 aces-apps/*.log
+
+askappy/askap-tos-and-aces
+askappy/build_log
+askappy/import_directives.txt
+askappy/*.log

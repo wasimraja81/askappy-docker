@@ -1,0 +1,35 @@
+# Modules to be built using python 
+#reproject
+#aplpy
+#python-dateutil>=2.8.2
+#tzdata>=2022.7
+#dask
+#casa-formats-io
+#patsy
+
+# NUMPY:
+numpy<1.24
+#setuptools
+
+# ASTROPY: 
+pyerfa
+astropy-iers-data
+pyyaml
+requests
+astropy
+
+# VO/Archives:
+astroquery
+jaraco.collections
+
+# matplotlib
+cycler
+kiwisolver
+contourpy
+fonttools>=4.22.0
+# FLASH
+toolz
+cloudpickle
+astropy_healpix
+spectral_cube
+
