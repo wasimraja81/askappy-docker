@@ -33,5 +33,3 @@ cloudpickle
 astropy_healpix
 spectral_cube
 
-# MPI
-mpi4py==3.1.6

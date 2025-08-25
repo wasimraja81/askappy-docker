@@ -102,6 +102,11 @@ LABEL org.opencontainers.image.title="tostool" \
       tostool.version="${REPO_VERSION}" \
       base.image="wasimraja81/askappy-ubuntu-24.04:tostool-${REPO_VERSION}" 
 
+COPY requirements.mpi4py.txt /tmp/requirements.mpi4py.txt
+# Upgrade pip and build tools to avoid compatibility errors
+RUN python3 -m pip install --upgrade pip setuptools wheel
+RUN python3 -m pip install --upgrade-strategy only-if-needed -r /tmp/requirements.mpi4py.txt
+
 RUN ln -sf /usr/bin/python3 /usr/local/bin/python
 
 # Health check to verify ASKAP tools are properly installed
