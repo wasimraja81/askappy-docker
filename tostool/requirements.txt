@@ -34,4 +34,4 @@ astropy_healpix
 spectral_cube
 
 # MPI
-mpi4py=3.1.6
+mpi4py==3.1.6
